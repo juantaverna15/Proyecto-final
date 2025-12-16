@@ -1,4 +1,3 @@
-
 unit U_Alumnos;
 
 {******************************************************
@@ -15,7 +14,7 @@ unit U_Alumnos;
 interface
 
 uses
-  crt, U_Tipos, U_Archivos;
+  crt, u_tipos, u_archivos;
 
 {------------------------------------------------------}
 { Procedimiento principal del módulo                   }
@@ -27,22 +26,22 @@ procedure MenuAlumnos(var archAlu: TArchivoAlumnos;
 implementation
 
 {------------------------------------------------------}
-{ Procedimientos internos                              }
+{ Declaración de procedimientos internos               }
 {------------------------------------------------------}
 
 procedure AltaAlumno(var archAlu: TArchivoAlumnos;
                      var archCap: TArchivoCapacitaciones;
-                     codCap: integer);
+                     codCap: integer); forward;
 
 procedure ConsultarAlumno(var archAlu: TArchivoAlumnos;
                           var archCap: TArchivoCapacitaciones;
-                          posAlu: longint);
+                          posAlu: longint); forward;
 
-procedure ModificarAlumno(var archAlu: TArchivoAlumnos; pos: longint);
+procedure ModificarAlumno(var archAlu: TArchivoAlumnos; pos: longint); forward;
 procedure BajaAlumno(var archAlu: TArchivoAlumnos;
                      var archCap: TArchivoCapacitaciones;
-                     pos: longint);
-procedure MostrarAlumno(reg: TAlumno);
+                     pos: longint); forward;
+procedure MostrarAlumno(reg: TAlumno); forward;
 
 {------------------------------------------------------}
 { 1. Menú principal de alumnos                         }
@@ -276,15 +275,15 @@ begin
   writeln('DNI: ', reg.dni);
   writeln('Apellido y nombre: ', reg.apenom);
   writeln('Fecha de nacimiento: ', reg.fechaNac.dia, '/', reg.fechaNac.mes, '/', reg.fechaNac.anio);
+  
   if reg.esDocenteUTN then
-  begin
     writeln('Docente UTN: Sí')
   else
     writeln('Docente UTN: No');
+  
+  // Agregar para usar las constantes y quitar los warnings
   writeln('Condición: ', CondTexto[reg.condicion]);
   writeln('Estado: ', EstadoTexto[reg.estado]);
 end;
 
-end.
-
-
+end.  // ← Solo UN end. para cerrar la implementación

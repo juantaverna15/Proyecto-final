@@ -25,14 +25,12 @@ procedure MenuEstadisticas(var archCap: TArchivoCapacitaciones);
 implementation
 
 {------------------------------------------------------}
-{ Procedimientos internos                              }
+{ Declaración de procedimientos internos (con forward) }
 {------------------------------------------------------}
 
-procedure DistribucionPorTipo(var archCap: TArchivoCapacitaciones);
-procedure PorcentajePorArea(var archCap: TArchivoCapacitaciones);
-procedure PromedioHorasPorTipo(var archCap: TArchivoCapacitaciones);
-function FechaEnRango(f, desde, hasta: TFecha): boolean;
-function CompararFechas(f1, f2: TFecha): integer;
+procedure DistribucionPorTipo(var archCap: TArchivoCapacitaciones); forward;
+procedure PorcentajePorArea(var archCap: TArchivoCapacitaciones); forward;
+procedure PromedioHorasPorTipo(var archCap: TArchivoCapacitaciones); forward;
 
 {------------------------------------------------------}
 { 1. Menú de estadísticas                              }
@@ -64,7 +62,7 @@ begin
 end;
 
 {------------------------------------------------------}
-{ 2. Función auxiliar: comparación de fechas            }
+{ 2. Funciones auxiliares para fechas                  }
 {------------------------------------------------------}
 
 function CompararFechas(f1, f2: TFecha): integer;
@@ -95,7 +93,7 @@ begin
 end;
 
 {------------------------------------------------------}
-{ 3. Distribución por tipo entre dos fechas             }
+{ 3. Distribución por tipo entre dos fechas            }
 {------------------------------------------------------}
 
 procedure DistribucionPorTipo(var archCap: TArchivoCapacitaciones);
@@ -146,7 +144,7 @@ begin
 end;
 
 {------------------------------------------------------}
-{ 4. Porcentaje de capacitaciones por área              }
+{ 4. Porcentaje de capacitaciones por área             }
 {------------------------------------------------------}
 
 procedure PorcentajePorArea(var archCap: TArchivoCapacitaciones);
@@ -197,7 +195,7 @@ begin
 end;
 
 {------------------------------------------------------}
-{ 5. Estadística adicional: Promedio de horas por tipo  }
+{ 5. Promedio de horas por tipo de capacitación        }
 {------------------------------------------------------}
 
 procedure PromedioHorasPorTipo(var archCap: TArchivoCapacitaciones);
