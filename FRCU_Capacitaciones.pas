@@ -18,18 +18,19 @@ uses
   U_Capacitaciones,
   U_Alumnos,
   U_Listados,
-  U_Estadisticas;
+  U_Estadisticas,
+  U_Utils;           { ← lectura segura de enteros }
 
 {------------------------------------------------------}
 { Declaración de variables globales principales        }
 {------------------------------------------------------}
 
 var
-  archCap: TArchivoCapacitaciones;
-  archAlu: TArchivoAlumnos;
-  arbolCod: PNodoCodigo;
-  arbolNom: PNodoNombre;
-  opcion: integer;
+  archCap  : TArchivoCapacitaciones;
+  archAlu  : TArchivoAlumnos;
+  arbolCod : PNodoCodigo;
+  arbolNom : PNodoNombre;
+  opcion   : integer;
 
 {------------------------------------------------------}
 { Procedimiento: Mostrar menú principal                }
@@ -47,7 +48,6 @@ begin
   writeln('4) Estadísticas');
   writeln('5) Salir');
   writeln('---------------------------------------------');
-  write('Seleccione una opción: ');
 end;
 
 {------------------------------------------------------}
@@ -76,7 +76,7 @@ begin
   { Menú principal del sistema }
   repeat
     MostrarMenuPrincipal;
-    readln(opcion);
+    opcion := LeerEnteroRango('Seleccione una opción: ', 1, 5);
 
     case opcion of
       1: MenuCapacitaciones(archCap, arbolCod, arbolNom);
@@ -87,7 +87,8 @@ begin
 
   until opcion = 5;
 
-  { Al salir, liberar recursos }
+
+
   LiberarArbolCodigo(arbolCod);
   LiberarArbolNombre(arbolNom);
   CerrarArchivoCapacitaciones(archCap);

@@ -1,5 +1,5 @@
 unit U_Tipos;
-
+{$codepage utf8}
 {******************************************************
   Unidad: U_Tipos
   Sistema: Gestión de Capacitaciones FRCU

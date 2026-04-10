@@ -1,5 +1,5 @@
 unit U_Archivos;
-
+{$codepage utf8}
 {******************************************************
   Unidad: U_Archivos
   Sistema: Gestión de Capacitaciones FRCU

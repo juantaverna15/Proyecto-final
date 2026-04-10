@@ -1,5 +1,5 @@
 unit U_Arboles;
-
+{$codepage utf8}
 {******************************************************
   Unidad: U_Arboles
   Sistema: Gestión de Capacitaciones FRCU
