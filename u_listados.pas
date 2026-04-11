@@ -1,33 +1,17 @@
 unit U_Listados;
-
-{******************************************************
-  Unidad: U_Listados
-  Sistema: Gestión de Capacitaciones FRCU
-  Propósito:
-    - Generar listados y certificados en consola,
-      accediendo a los archivos random.
-  Restricciones:
-    - Programación imperativa estructurada.
-    - Sin break, exit ni goto.
-*******************************************************}
+{$codepage utf8}
 
 interface
 
 uses
-  crt, U_Tipos, U_Archivos, U_Utils;
+  crt, U_Tipos, U_Archivos, U_Utilidades;
 
-{------------------------------------------------------}
-{ Procedimientos públicos                              }
-{------------------------------------------------------}
+
 
 procedure MenuListados(var archCap: TArchivoCapacitaciones;
                        var archAlu: TArchivoAlumnos);
 
 implementation
-
-{------------------------------------------------------}
-{ Declaración de procedimientos internos               }
-{------------------------------------------------------}
 
 procedure ListadoPorArea(var archCap: TArchivoCapacitaciones); forward;
 procedure ListadoCapacitacionesDeAlumno(var archCap: TArchivoCapacitaciones;
@@ -40,9 +24,6 @@ procedure MostrarCapacitacionCorta(reg: TCapacitacion); forward;
 procedure MostrarAlumnoCorto(reg: TAlumno); forward;
 
 
-{------------------------------------------------------}
-{ 6. Utilitarios de impresión                          }
-{------------------------------------------------------}
 
 procedure MostrarCapacitacionCorta(reg: TCapacitacion);
 const
@@ -63,9 +44,7 @@ begin
 end;
 
 
-{------------------------------------------------------}
-{ 1. Menú de listados                                  }
-{------------------------------------------------------}
+
 
 procedure MenuListados(var archCap: TArchivoCapacitaciones;
                        var archAlu: TArchivoAlumnos);
@@ -95,37 +74,130 @@ begin
 end;
 
 
-{------------------------------------------------------}
-{ 2. Listado por área y nombre de capacitación         }
-{------------------------------------------------------}
 
 procedure ListadoPorArea(var archCap: TArchivoCapacitaciones);
+const
+  AreaTexto: array[TAreaCapacitacion] of string[10] =
+    ('ISI', 'LOI', 'Civil', 'Electro', 'General');
 var
-  reg: TCapacitacion;
-  pos: longint;
+  reg        : TCapacitacion;
+  regMin     : TCapacitacion;
+  pos        : longint;
+  posMin     : longint;
+  encontrado : boolean;
+  hayAlguna  : boolean;
+  lastArea   : string;
+  lastNombre : string;
+  lastPos    : longint;
+  areaReg    : string;
+  areaMin    : string;
+  esMayor    : boolean;
+  esMenor    : boolean;
 begin
   clrscr;
   writeln('=============================================');
   writeln('  LISTADO DE CAPACITACIONES POR ÁREA/NOMBRE  ');
   writeln('=============================================');
-  seek(archCap, 0);
-  pos := 0;
-  while pos < filesize(archCap) do
+
+  hayAlguna  := false;
+  lastArea   := '';
+  lastNombre := '';
+  lastPos    := -1;
+
+  encontrado := true;
+  while encontrado do
   begin
-    read(archCap, reg);
-    if reg.estado = activo then
-      MostrarCapacitacionCorta(reg);
-    pos := pos + 1;
+    encontrado := false;
+    posMin     := -1;
+    pos        := 0;
+    seek(archCap, 0);
+
+    while pos < filesize(archCap) do
+    begin
+      read(archCap, reg);
+
+      if reg.estado = activo then
+      begin
+        areaReg := AreaTexto[reg.area];
+
+        { ¿Es este registro mayor que el último impreso? }
+        esMayor := false;
+        if areaReg > lastArea then
+          esMayor := true
+        else if areaReg = lastArea then
+        begin
+          if reg.nombre > lastNombre then
+            esMayor := true
+          else if reg.nombre = lastNombre then
+            esMayor := (pos > lastPos);
+        end;
+
+        if esMayor then
+        begin
+          if not encontrado then
+          begin
+            encontrado := true;
+            regMin     := reg;
+            posMin     := pos;
+          end
+          else
+          begin
+            { ¿Es menor que el mínimo actual? }
+            areaMin := AreaTexto[regMin.area];
+            esMenor := false;
+            if areaReg < areaMin then
+              esMenor := true
+            else if areaReg = areaMin then
+            begin
+              if reg.nombre < regMin.nombre then
+                esMenor := true
+              else if reg.nombre = regMin.nombre then
+                esMenor := (pos < posMin);
+            end;
+
+            if esMenor then
+            begin
+              regMin := reg;
+              posMin := pos;
+            end;
+          end;
+        end;
+      end;
+
+      pos := pos + 1;
+    end;
+
+    if encontrado then
+    begin
+      areaMin   := AreaTexto[regMin.area];
+      hayAlguna := true;
+
+      { Encabezado de área cuando cambia }
+      if areaMin <> lastArea then
+      begin
+        writeln;
+        writeln('  ÁREA: ', areaMin);
+        writeln('  =============================================');
+      end;
+
+      MostrarCapacitacionCorta(regMin);
+
+      lastArea   := areaMin;
+      lastNombre := regMin.nombre;
+      lastPos    := posMin;
+    end;
   end;
+
+  if not hayAlguna then
+    writeln('  No hay capacitaciones activas.');
+
   writeln('---------------------------------------------');
   writeln('Fin del listado. Presione ENTER...');
   readln;
 end;
 
 
-{------------------------------------------------------}
-{ 3. Listado de capacitaciones de un alumno            }
-{------------------------------------------------------}
+
 
 procedure ListadoCapacitacionesDeAlumno(var archCap: TArchivoCapacitaciones;
                                         var archAlu: TArchivoAlumnos);
@@ -184,9 +256,6 @@ begin
 end;
 
 
-{------------------------------------------------------}
-{ 4. Listado de alumnos aprobados por capacitación     }
-{------------------------------------------------------}
 
 procedure ListadoAprobadosPorCapacitacion(var archCap: TArchivoCapacitaciones;
                                           var archAlu: TArchivoAlumnos);
@@ -220,13 +289,10 @@ begin
     while posAlu < filesize(archAlu) do
     begin
       read(archAlu, alu);
-      if (alu.codCapacitacion = codCap) and (alu.estado = activo) then
-      begin
-        if alu.condicion = Aprobado then
-          writeln(alu.apenom:30, '   Aprobado')
-        else
-          writeln(alu.apenom:30, '   Asistencia');
-      end;
+if (alu.codCapacitacion = codCap) and
+   (alu.estado = activo)          and
+   (alu.condicion = Aprobado)     then
+  writeln(alu.apenom:30, '   Aprobado');
       posAlu := posAlu + 1;
     end;
   end
@@ -239,18 +305,7 @@ begin
 end;
 
 
-{======================================================}
-{         CERTIFICADO  (diseño rediseñado)             }
-{======================================================}
 
-{------------------------------------------------------}
-{ 5. Generar certificado de cursado o aprobación       }
-{                                                      }
-{   Diseño: caja de doble línea (80 cols), caja       }
-{   interna de línea simple para los datos de la      }
-{   capacitación, formato DNI con puntos,             }
-{   fecha de emisión escrita en letras.               }
-{------------------------------------------------------}
 
 procedure GenerarCertificado(var archCap: TArchivoCapacitaciones;
                              var archAlu: TArchivoAlumnos);
@@ -260,306 +315,113 @@ var
   posCap, posAlu: longint;
   cap           : TCapacitacion;
   alu           : TAlumno;
-  sTipo, sArea  : string;
-  sHoras        : string;
-  sAnio         : string;
-  sDocUTN       : string;
+  sTipo         : string;
+  sArea         : string;
   sCondicion    : string;
-  sCentroTipo   : string;
-  sLinea        : string;
-  iLen          : integer;
-
-  { ══════════════════════════════════════════════ }
-  {   Funciones auxiliares locales al certificado  }
-  { ══════════════════════════════════════════════ }
-
-  { Repite el carácter c exactamente n veces }
-  function RepStr(c: char; n: integer): string;
-  var s: string; k: integer;
-  begin
-    s := '';
-    for k := 1 to n do s := s + c;
-    RepStr := s;
-  end;
-
-  { Centra texto s dentro de un ancho de 78 caracteres }
-  function Centro(s: string): string;
-  var pad: integer;
-  begin
-    pad := (78 - length(s)) div 2;
-    if pad < 0 then pad := 0;
-    Centro := RepStr(' ', pad) + s;
-  end;
-
-  { Entero a string de 2 dígitos con cero a la izquierda }
-  function I2(n: integer): string;
-  var s: string;
-  begin
-    str(n, s);
-    if length(s) = 1 then s := '0' + s;
-    I2 := s;
-  end;
-
-  { Entero a string de 3 dígitos con ceros a la izquierda }
-  function I3(n: integer): string;
-  var s: string;
-  begin
-    str(n, s);
-    while length(s) < 3 do s := '0' + s;
-    I3 := s;
-  end;
-
-  { Formatea DNI como XX.XXX.XXX }
-  function FormatDNI(d: longint): string;
-  var mill, miles, resto: longint; s: string;
-  begin
-    mill  := d div 1000000;
-    miles := (d mod 1000000) div 1000;
-    resto :=  d mod 1000;
-    str(mill, s);
-    FormatDNI := s + '.' + I3(miles) + '.' + I3(resto);
-  end;
-
-  { Nombre del mes en español }
-  function NombreMes(m: integer): string;
-  var nom: string;
-  begin
-    case m of
-      1 : nom := 'enero';
-      2 : nom := 'febrero';
-      3 : nom := 'marzo';
-      4 : nom := 'abril';
-      5 : nom := 'mayo';
-      6 : nom := 'junio';
-      7 : nom := 'julio';
-      8 : nom := 'agosto';
-      9 : nom := 'septiembre';
-      10: nom := 'octubre';
-      11: nom := 'noviembre';
-      12: nom := 'diciembre';
-    else
-      nom := '?';
-    end;
-    NombreMes := nom;
-  end;
-
-  { Fecha como DD/MM/AAAA }
-  function FechaCorta(f: TFecha): string;
-  var sA: string;
-  begin
-    str(f.anio, sA);
-    FechaCorta := I2(f.dia) + '/' + I2(f.mes) + '/' + sA;
-  end;
-
-  { Fecha como "30 de junio de 2024" }
-  function FechaLarga(f: TFecha): string;
-  var sA, sD: string;
-  begin
-    str(f.anio, sA);
-    str(f.dia,  sD);
-    FechaLarga := sD + ' de ' + NombreMes(f.mes) + ' de ' + sA;
-  end;
-
-  { ══════════════════════════════════════════════ }
-  {   Procedimientos de dibujo de la caja          }
-  { ══════════════════════════════════════════════ }
-
-  { Línea superior de la caja doble: ╔══...══╗ }
-  procedure BT;
-  begin
-    writeln(#201, RepStr(#205, 78), #187);
-  end;
-
-  { Línea inferior de la caja doble: ╚══...══╝ }
-  procedure BB;
-  begin
-    writeln(#200, RepStr(#205, 78), #188);
-  end;
-
-  { Línea divisora horizontal: ╠══...══╣ }
-  procedure BH;
-  begin
-    writeln(#204, RepStr(#205, 78), #185);
-  end;
-
-  { Línea vacía dentro de la caja: ║            ║ }
-  procedure BE;
-  begin
-    writeln(#186, RepStr(' ', 78), #186);
-  end;
-
-  { Línea de contenido dentro de la caja de 80 cols.   }
-  {   s debe tener exactamente 78 chars (se rellena).  }
-  procedure BL(s: string);
-  begin
-    if length(s) > 78 then s := copy(s, 1, 78);
-    while length(s) < 78 do s := s + ' ';
-    writeln(#186, s, #186);
-  end;
-
-  { ── Caja interna de línea simple (capacitación) ── }
-
-  { Tapa superior: ║  ┌──72──┐  ║ }
-  procedure IT;
-  begin
-    writeln(#186, '  ', #218, RepStr(#196, 72), #191, '  ', #186);
-  end;
-
-  { Tapa inferior: ║  └──72──┘  ║ }
-  procedure IB;
-  begin
-    writeln(#186, '  ', #192, RepStr(#196, 72), #217, '  ', #186);
-  end;
-
-  { Línea de contenido: ║  │ s(70) │  ║ }
-  procedure IL(s: string);
-  begin
-    if length(s) > 70 then s := copy(s, 1, 70);
-    while length(s) < 70 do s := s + ' ';
-    writeln(#186, '  ', #179, ' ', s, ' ', #179, '  ', #186);
-  end;
-
-{ ══════════════════════════════════════════════════ }
-{              CUERPO PRINCIPAL                       }
-{ ══════════════════════════════════════════════════ }
-
+  sDocUTN       : string;
+  sHoras        : string;
 begin
   clrscr;
   writeln('=============================================');
   writeln('           GENERAR CERTIFICADO               ');
   writeln('=============================================');
-  codCap := LeerEntero          ('Ingrese código de capacitación: ');
-  dni    := LeerLongintRango    ('Ingrese DNI del alumno        : ', 10000000, 99999999);
+  codCap := LeerEntero       ('Codigo de capacitacion : ');
+  dni    := LeerLongintRango ('DNI del alumno         : ', 10000000, 99999999);
 
   posCap := BuscarCapacitacionPorCodigo(archCap, codCap);
   posAlu := BuscarAlumnoPorDNI(archAlu, codCap, dni);
 
-  if (posCap <> -1) and (posAlu <> -1) then
+  if (posCap = -1) or (posAlu = -1) then
   begin
-    LeerCapacitacion(archCap, posCap, cap);
-    LeerAlumno(archAlu, posAlu, alu);
-    clrscr;
-
-    { ── Textos auxiliares ── }
-    case cap.tipo of
-      curso    : sTipo := 'Curso';
-      taller   : sTipo := 'Taller';
-      seminario: sTipo := 'Seminario';
-    end;
-
-    case cap.area of
-      ISI    : sArea := 'ISI';
-      LOI    : sArea := 'LOI';
-      Civil  : sArea := 'Civil';
-      Electro: sArea := 'Electro';
-      General: sArea := 'General';
-    end;
-
-    str(cap.horas, sHoras);
-
-    if alu.esDocenteUTN then
-      sDocUTN := 'S' + #237   { í - evita problemas de codificación }
-    else
-      sDocUTN := 'No';
-
-    if alu.condicion = Aprobado then
-    begin
-      sCondicion   := 'APROBADO';
-      sCentroTipo  := Centro(#16 + #16 + #16 + '  CONDICIÓN: APROBADO  ' + #17 + #17 + #17);
-    end
-    else
-    begin
-      sCondicion   := 'ASISTENCIA';
-      sCentroTipo  := Centro(#16 + #16 + #16 + '  CONDICIÓN: ASISTENCIA  ' + #17 + #17 + #17);
-    end;
-
-    { ─────────────────────────────────────────── }
-    {              ENCABEZADO                     }
-    { ─────────────────────────────────────────── }
-    BT;
-    BE;
-    BL(Centro(#15 + '  UNIVERSIDAD TECNOLÓGICA NACIONAL  ' + #15));
-    BL(Centro('FACULTAD REGIONAL CONCEPCIÓN DEL URUGUAY'));
-    BL(Centro('Secretaría de Extensión Universitaria'));
-    BE;
-    BH;
-    BE;
-    BL(Centro(#4 + '  C  E  R  T  I  F  I  C  A  D  O  ' + #4));
-    BE;
-    BH;
-
-    { ─────────────────────────────────────────── }
-    {              DATOS DEL ALUMNO               }
-    { ─────────────────────────────────────────── }
-    BE;
-    BL('  La Secretaría de Extensión Universitaria de la FRCU - UTN,');
-    BL('  certifica que el/la siguiente alumno/a:');
-    BE;
-
-    sLinea := '   ' + #16 + ' Apellido y Nombre :  ' + alu.apenom;
-    BL(sLinea);
-
-    sLinea := '   ' + #16 + ' DNI               :  ' + FormatDNI(alu.dni);
-    BL(sLinea);
-
-    sLinea := '   ' + #16 + ' Docente UTN       :  ' + sDocUTN;
-    BL(sLinea);
-
-    BE;
-    BL('  Ha completado la siguiente actividad de extensión universitaria:');
-    BE;
-
-    { ─────────────────────────────────────────── }
-    {          CAJA INTERNA - CAPACITACIÓN        }
-    { ─────────────────────────────────────────── }
-    IT;
-
-    IL('  Nombre   : ' + cap.nombre);
-
-    { Tipo + Área en la misma línea }
-    sLinea := '  Tipo     : ' + sTipo;
-    while length(sLinea) < 35 do sLinea := sLinea + ' ';
-    sLinea := sLinea + 'Área : ' + sArea;
-    IL(sLinea);
-
-    IL('  Duración : ' + sHoras + ' horas');
-    IL('  Período  : ' + FechaCorta(cap.fechaInicio) + '   al   ' + FechaCorta(cap.fechaFin));
-
-    { Docentes truncados a 57 chars para que quepan en IL }
-    sLinea := cap.docentes;
-    if length(sLinea) > 57 then sLinea := copy(sLinea, 1, 57);
-    IL('  Docentes : ' + sLinea);
-
-    IB;
-
-    { ─────────────────────────────────────────── }
-    {              CONDICIÓN / FIRMA              }
-    { ─────────────────────────────────────────── }
-    BE;
-    BL(sCentroTipo);
-    BE;
-
-    sLinea := '  Concepción del Uruguay, ' + FechaLarga(cap.fechaFin) + '.';
-    BL(sLinea);
-
-    BE;
-    BH;
-    BE;
-
-    BL(Centro('_________________________________________________'));
-    BE;
-    BL(Centro('Secretaría de Extensión Universitaria'));
-    BL(Centro('Facultad Regional Concepción del Uruguay'));
-    BL(Centro('Universidad Tecnológica Nacional'));
-    BE;
-    BB;
-
+    writeln;
+    writeln('  [!] No se encontro el alumno o la capacitacion.');
   end
   else
   begin
-    writeln;
-    writeln('  [!] No se encontró el alumno o la capacitación con esos datos.');
-  end;
+    LeerCapacitacion(archCap, posCap, cap);
+    LeerAlumno(archAlu, posAlu, alu);
+
+    if (cap.estado = no_activo) or (alu.estado = no_activo) then
+    begin
+      writeln;
+      if cap.estado = no_activo then
+        writeln('  [!] La capacitacion esta dada de baja. No se puede emitir certificado.');
+      if alu.estado = no_activo then
+        writeln('  [!] El alumno esta dado de baja. No se puede emitir certificado.');
+    end
+    else
+    begin
+      case cap.tipo of
+        curso    : sTipo := 'Curso';
+        taller   : sTipo := 'Taller';
+        seminario: sTipo := 'Seminario';
+      end;
+
+      case cap.area of
+        ISI    : sArea := 'ISI';
+        LOI    : sArea := 'LOI';
+        Civil  : sArea := 'Civil';
+        Electro: sArea := 'Electro';
+        General: sArea := 'General';
+      end;
+
+      if alu.condicion = Aprobado then
+        sCondicion := 'APROBADO'
+      else
+        sCondicion := 'ASISTENCIA';
+
+      if alu.esDocenteUTN then
+        sDocUTN := 'Si'
+      else
+        sDocUTN := 'No';
+
+      str(cap.horas, sHoras);
+
+      clrscr;
+      writeln('*********************************************');
+      writeln('*   UNIVERSIDAD TECNOLOGICA NACIONAL        *');
+      writeln('*   Facultad Regional Concepcion del Urugay *');
+      writeln('*   Secretaria de Extension Universitaria   *');
+      writeln('*********************************************');
+      writeln;
+      writeln('              C E R T I F I C A D O         ');
+      writeln('---------------------------------------------');
+      writeln;
+      writeln('La Secretaria certifica que:');
+      writeln;
+      writeln('  Alumno   : ', alu.apenom);
+      writeln('  DNI      : ', alu.dni);
+      writeln('  Doc. UTN : ', sDocUTN);
+      writeln;
+      writeln('Ha completado satisfactoriamente:');
+      writeln;
+      writeln('  Nombre   : ', cap.nombre);
+      writeln('  Tipo     : ', sTipo, ' - Area: ', sArea);
+      writeln('  Duracion : ', sHoras, ' horas');
+      writeln('  Inicio   : ', cap.fechaInicio.dia, '/',
+                               cap.fechaInicio.mes, '/',
+                               cap.fechaInicio.anio);
+      writeln('  Fin      : ', cap.fechaFin.dia, '/',
+                               cap.fechaFin.mes, '/',
+                               cap.fechaFin.anio);
+      writeln('  Docentes : ', cap.docentes);
+      writeln;
+      writeln('---------------------------------------------');
+      writeln('  Condicion: >>> ', sCondicion, ' <<<');
+      writeln('---------------------------------------------');
+      writeln;
+      writeln('  Concepcion del Uruguay, ',
+              cap.fechaFin.dia, '/',
+              cap.fechaFin.mes, '/',
+              cap.fechaFin.anio);
+      writeln;
+      writeln('  ______________________________________');
+      writeln('  Secretaria de Extension Universitaria');
+      writeln('  FRCU - UTN');
+      writeln;
+      writeln('*********************************************');
+    end;  { cierra else estado activo }
+  end;    { cierra else posCap/posAlu }
 
   writeln;
   writeln('Presione ENTER para continuar...');

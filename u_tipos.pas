@@ -1,22 +1,12 @@
 unit U_Tipos;
 {$codepage utf8}
-{******************************************************
-  Unidad: U_Tipos
-  Sistema: Gestión de Capacitaciones FRCU
-  Propósito:
-    - Definir todos los tipos de datos, enumeraciones,
-      y estructuras utilizadas por el sistema.
-    - Centralizar la definición de registros, archivos
-      y estructuras auxiliares (árboles).
-  Autor: [Tu Nombre]
-  Fecha: [Fecha de creación]
-*******************************************************}
+
 
 interface
 
 {------------------------------}
 { 1. Tipos de Enumeraciones   }
-{------------------------------}
+
 
 type
   { Tipos de capacitaciones ofrecidas }
@@ -32,9 +22,9 @@ type
   TCondicionAlumno = (Aprobado, Asistencia);
 
 
-{------------------------------}
+
 { 2. Tipo Fecha Estructurada   }
-{------------------------------}
+
 
 type
   TFecha = record
@@ -42,9 +32,9 @@ type
   end;
 
 
-{------------------------------}
+
 { 3. Registro de Capacitaciones}
-{------------------------------}
+
 
 type
   TCapacitacion = record
@@ -61,9 +51,9 @@ type
   end;
 
 
-{------------------------------}
+
 { 4. Registro de Alumnos       }
-{------------------------------}
+
 
 type
   TAlumno = record
@@ -77,18 +67,17 @@ type
   end;
 
 
-{------------------------------}
+
 { 5. Archivos Random           }
-{------------------------------}
+
 
 type
   TArchivoCapacitaciones = file of TCapacitacion;
   TArchivoAlumnos = file of TAlumno;
 
 
-{------------------------------}
+
 { 6. Árboles Binarios de Búsqueda (ABB) }
-{------------------------------}
 
 type
   PNodoCodigo = ^TNodoCodigo;
@@ -109,9 +98,6 @@ type
   end;
 
 
-{------------------------------}
-{ 7. Constantes generales      }
-{------------------------------}
 
 const
   ARCH_CAPACITACIONES = 'capacitaciones.dat';

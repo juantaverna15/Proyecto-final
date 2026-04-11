@@ -1,24 +1,12 @@
 unit U_Arboles;
 {$codepage utf8}
-{******************************************************
-  Unidad: U_Arboles
-  Sistema: Gestión de Capacitaciones FRCU
-  Propósito:
-    - Implementar Árboles Binarios de Búsqueda (ABB)
-      para indexar capacitaciones:
-        * Por código de capacitación.
-        * Por nombre de capacitación.
-    - Permitir búsqueda, inserción y recorrido.
-*******************************************************}
 
 interface
 
 uses
   U_Tipos;
 
-{--------------------------------------------------}
-{ Procedimientos públicos de manejo de ABB }
-{--------------------------------------------------}
+
 
 procedure InicializarArbolCodigo(var raiz: PNodoCodigo);
 procedure InicializarArbolNombre(var raiz: PNodoNombre);
@@ -37,9 +25,9 @@ procedure LiberarArbolNombre(var raiz: PNodoNombre);
 
 implementation
 
-{--------------------------------------------------}
+
 { 1. Inicialización de árboles vacíos              }
-{--------------------------------------------------}
+
 
 procedure InicializarArbolCodigo(var raiz: PNodoCodigo);
 begin
@@ -51,9 +39,9 @@ begin
   raiz := nil;
 end;
 
-{--------------------------------------------------}
+
 { 2. Inserción ordenada (ABB clásico)              }
-{--------------------------------------------------}
+
 
 procedure InsertarCodigo(var raiz: PNodoCodigo; codigo: integer; pos: longint);
 begin
@@ -95,11 +83,11 @@ begin
   end;
 end;
 
-{--------------------------------------------------}
+
 { 3. Búsqueda en ABB                               }
 { Devuelve: posición relativa del archivo          }
 { o -1 si no se encuentra                          }
-{--------------------------------------------------}
+
 
 function BuscarPorCodigo(raiz: PNodoCodigo; codigo: integer): longint;
 var
@@ -137,9 +125,9 @@ begin
   BuscarPorNombre := pos;
 end;
 
-{--------------------------------------------------}
+
 { 4. Recorridos (InOrden para listados ordenados)  }
-{--------------------------------------------------}
+
 
 procedure InOrdenCodigo(raiz: PNodoCodigo);
 begin
@@ -161,9 +149,8 @@ begin
   end;
 end;
 
-{--------------------------------------------------}
 { 5. Liberar memoria de árboles                    }
-{--------------------------------------------------}
+
 
 procedure LiberarArbolCodigo(var raiz: PNodoCodigo);
 begin

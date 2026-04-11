@@ -1,5 +1,5 @@
 unit U_Alumnos;
-
+{$codepage utf8}
 {******************************************************
   Unidad: U_Alumnos
   Sistema: Gestión de Capacitaciones FRCU
@@ -16,7 +16,7 @@ unit U_Alumnos;
 interface
 
 uses
-  crt, U_Tipos, U_Archivos, U_Utils;
+  crt, U_Tipos, U_Archivos, U_Utilidades;
 
 {------------------------------------------------------}
 { Procedimiento principal del módulo                   }
@@ -39,7 +39,9 @@ procedure ConsultarAlumno(var archAlu: TArchivoAlumnos;
                           var archCap: TArchivoCapacitaciones;
                           posAlu: longint); forward;
 
-procedure ModificarAlumno(var archAlu: TArchivoAlumnos; pos: longint); forward;
+procedure ModificarAlumno(var archAlu: TArchivoAlumnos;
+                          var archCap: TArchivoCapacitaciones;
+                          pos: longint); forward;
 
 procedure BajaAlumno(var archAlu: TArchivoAlumnos;
                      var archCap: TArchivoCapacitaciones;
@@ -59,17 +61,17 @@ procedure MostrarAlumno(reg: TAlumno); forward;
 function EsSoloDigitos(s: string): boolean;
 var
   i  : integer;
-  ok : boolean;
+  contienedigitos : boolean;
 begin
-  ok := length(s) > 0;
+  contienedigitos := length(s) > 0;
   i  := 1;
-  while ok and (i <= length(s)) do
+  while contienedigitos and (i <= length(s)) do
   begin
     if not (s[i] in ['0'..'9']) then
-      ok := false;
+      contienedigitos := false;
     i := i + 1;
   end;
-  EsSoloDigitos := ok;
+  EsSoloDigitos := contienedigitos;
 end;
 
 {------------------------------------------------------}
@@ -78,21 +80,28 @@ end;
 {------------------------------------------------------}
 function EsNombreValido(s: string): boolean;
 var
-  i          : integer;
-  tieneLetras: boolean;
-  tieneDigito: boolean;
+  i      : integer;
+  valido : boolean;
+  c      : char;
 begin
-  tieneLetras := length(s) > 0;
-  tieneDigito := false;
+  valido := length(s) > 0;
   i := 1;
-  while i <= length(s) do
+  while valido and (i <= length(s)) do
   begin
-    if s[i] in ['0'..'9'] then
-      tieneDigito := true;
+    c := s[i];
+    { Permite: letras a-z / A-Z, espacio, guion medio,     }
+    { punto (Dr. / Jr.) y bytes >= #128 que cubren los      }
+    { caracteres UTF-8 de dos bytes: á é í ó ú ü ñ Ñ etc.  }
+    if not ( (c in ['a'..'z']) or
+             (c in ['A'..'Z']) or
+             (c = ' ')         or
+             (c = '-')         or
+             (c = '.')         or
+             (ord(c) >= 128)   ) then
+      valido := false;
     i := i + 1;
   end;
-  { Válido: tiene contenido y ningún dígito }
-  EsNombreValido := tieneLetras and not tieneDigito;
+  EsNombreValido := valido;
 end;
 
 {------------------------------------------------------}
@@ -170,10 +179,12 @@ begin
   LeerCodigoCap := valor;
 end;
 
+
+
 {------------------------------------------------------}
 { E-2. Ingresa el DNI del alumno                       }
 {   - Solo dígitos (sin puntos ni guiones).            }
-{   - Valor mínimo: 1                                  }
+{   - Valor mínimo: 10.000.000                         }
 {   - Valor máximo: 99.999.999                         }
 {------------------------------------------------------}
 function LeerDNIValido: longint;
@@ -184,18 +195,18 @@ var
   valido: boolean;
 begin
   repeat
-    write('  DNI (solo números, máx. 99.999.999, sin puntos): ');
+    write('  DNI (solo números, sin puntos): ');
     readln(s);
     valido := EsSoloDigitos(s);
     if valido then
     begin
       val(s, valor, code);
-      valido := (code = 0) and (valor >= 1) and (valor <= 99999999);
+      valido := (code = 0) and (valor >= 10000000) and (valor <= 99999999);
     end;
     if not valido then
     begin
       writeln;
-      writeln('  [!] DNI inválido. Ingrese solo dígitos, entre 1 y 99999999.');
+      writeln('  [!] DNI inválido. .');
       writeln('      No use puntos, guiones ni letras.');
     end;
   until valido;
@@ -226,12 +237,7 @@ begin
   until valido;
 end;
 
-{------------------------------------------------------}
-{ E-4. Ingresa la FECHA DE NACIMIENTO                  }
-{   - Valida que sea una fecha calendario real.        }
-{   - Contempla meses con 28/29/30/31 días.            }
-{   - Incluye validación de año bisiesto (Feb-29).     }
-{------------------------------------------------------}
+
 procedure LeerFechaNacimiento(var f: TFecha);
 var
   valido: boolean;
@@ -240,7 +246,7 @@ begin
     writeln('  Fecha de nacimiento:');
     f.dia  := LeerEnteroRango('    Día  (1-31) : ', 1, 31);
     f.mes  := LeerEnteroRango('    Mes  (1-12) : ', 1, 12);
-    f.anio := LeerEntero     ('    Año         : ');
+    f.anio := LeerEnteroRango('    Año  (1900-2010) : ', 1900, 2010);
     valido := FechaValida(f);
     if not valido then
     begin
@@ -255,11 +261,6 @@ begin
   until valido;
 end;
 
-{------------------------------------------------------}
-{ E-5. Pregunta si es DOCENTE UTN                      }
-{   - Acepta solo 1 (Sí) o 2 (No).                    }
-{   - Pide de nuevo hasta que el valor sea correcto.   }
-{------------------------------------------------------}
 function LeerEsDocenteUTN: boolean;
 var
   s     : string;
@@ -288,11 +289,7 @@ begin
   LeerEsDocenteUTN := (valor = 1);
 end;
 
-{------------------------------------------------------}
-{ E-6. Ingresa la CONDICIÓN académica del alumno       }
-{   - Acepta solo 1 (Aprobado) o 2 (Asistencia).      }
-{   - Pide de nuevo hasta que el valor sea correcto.   }
-{------------------------------------------------------}
+
 function LeerCondicionValida: TCondicionAlumno;
 var
   s      : string;
@@ -327,13 +324,36 @@ begin
 end;
 
 
-{======================================================}
-{         PROCEDIMIENTOS PRINCIPALES DEL MENÚ          }
-{======================================================}
-
-{------------------------------------------------------}
-{ 1. Menú principal de alumnos                         }
-{------------------------------------------------------}
+function LeerEstadoValido: TEstadoRegistro;
+var
+  s      : string;
+  valor  : integer;
+  code   : integer;
+  valido : boolean;
+begin
+  repeat
+    writeln('  Estado del alumno:');
+    writeln('    1) Activo');
+    writeln('    2) No activo');
+    write  ('  Seleccione (1 o 2): ');
+    readln(s);
+    valido := EsSoloDigitos(s);
+    if valido then
+    begin
+      val(s, valor, code);
+      valido := (code = 0) and ((valor = 1) or (valor = 2));
+    end;
+    if not valido then
+    begin
+      writeln;
+      writeln('  [!] Opción inválida. Ingrese 1 (Activo) o 2 (No activo).');
+    end;
+  until valido;
+  if valor = 1 then
+    LeerEstadoValido := activo
+  else
+    LeerEstadoValido := no_activo;
+end;
 
 procedure MenuAlumnos(var archAlu: TArchivoAlumnos;
                       var archCap: TArchivoCapacitaciones);
@@ -453,9 +473,7 @@ begin
 end;
 
 
-{------------------------------------------------------}
-{ 3. Consulta y submenú de alumno                      }
-{------------------------------------------------------}
+
 
 procedure ConsultarAlumno(var archAlu: TArchivoAlumnos;
                           var archCap: TArchivoCapacitaciones;
@@ -478,21 +496,25 @@ begin
     opcion := LeerEnteroRango('Seleccione opción: ', 1, 3);
 
     case opcion of
-      1: ModificarAlumno(archAlu, posAlu);
+      1: ModificarAlumno(archAlu, archCap, posAlu);
       2: BajaAlumno(archAlu, archCap, posAlu);
     end;
   until opcion = 3;
 end;
 
 
-{------------------------------------------------------}
-{ 4. Modificación de alumno (con validaciones)         }
-{------------------------------------------------------}
 
-procedure ModificarAlumno(var archAlu: TArchivoAlumnos; pos: longint);
+
+procedure ModificarAlumno(var archAlu: TArchivoAlumnos;
+                          var archCap: TArchivoCapacitaciones;
+                          pos: longint);
 var
-  alu   : TAlumno;
-  opcion: integer;
+  alu         : TAlumno;
+  cap         : TCapacitacion;
+  posCap      : longint;
+  opcion      : integer;
+  estadoAntes : TEstadoRegistro;
+  estadoNuevo : TEstadoRegistro;
 begin
   LeerAlumno(archAlu, pos, alu);
   repeat
@@ -504,36 +526,56 @@ begin
     writeln;
     writeln('  1) Cambiar nombre');
     writeln('  2) Cambiar condición');
-    writeln('  3) Cambiar si es docente UTN');
-    writeln('  4) Volver');
-    opcion := LeerEnteroRango('Opción: ', 1, 4);
+    writeln('  3) Cambiar si es docente/alumno UTN');
+    writeln('  4) Cambiar estado (Activo / No activo)');
+    writeln('  5) Volver');
+    opcion := LeerEnteroRango('Opción: ', 1, 5);
 
     case opcion of
       1: begin
            writeln;
-           { Reutiliza el validador de nombre }
            LeerNombreValido(alu.apenom);
          end;
       2: begin
            writeln;
-           { Reutiliza el validador de condición }
            alu.condicion := LeerCondicionValida;
          end;
       3: begin
            writeln;
-           { Reutiliza el validador de docente UTN }
            alu.esDocenteUTN := LeerEsDocenteUTN;
          end;
+      4: begin
+           writeln;
+           estadoAntes := alu.estado;
+           estadoNuevo := LeerEstadoValido;
+           alu.estado  := estadoNuevo;
+
+           { Actualizar cantAlumnos en la capacitación según el cambio }
+           if estadoAntes <> estadoNuevo then
+           begin
+             posCap := BuscarCapacitacionPorCodigo(archCap, alu.codCapacitacion);
+             if posCap <> -1 then
+             begin
+               LeerCapacitacion(archCap, posCap, cap);
+               if (estadoAntes = no_activo) and (estadoNuevo = activo) then
+                 cap.cantAlumnos := cap.cantAlumnos + 1
+               else if (estadoAntes = activo) and (estadoNuevo = no_activo) then
+               begin
+                 if cap.cantAlumnos > 0 then
+                   cap.cantAlumnos := cap.cantAlumnos - 1;
+               end;
+               ActualizarCapacitacion(archCap, posCap, cap);
+             end;
+           end;
+         end;
     end;
-  until opcion = 4;
+  until opcion = 5;
 
   ActualizarAlumno(archAlu, pos, alu);
 end;
 
 
-{------------------------------------------------------}
-{ 5. Baja lógica de alumno                             }
-{------------------------------------------------------}
+
 
 procedure BajaAlumno(var archAlu: TArchivoAlumnos;
                      var archCap: TArchivoCapacitaciones;
@@ -544,31 +586,38 @@ var
   posCap: longint;
 begin
   LeerAlumno(archAlu, pos, alu);
-  alu.estado := no_activo;
-  ActualizarAlumno(archAlu, pos, alu);
 
-  { Descontar cantidad de inscriptos activos en la capacitación }
-  posCap := BuscarCapacitacionPorCodigo(archCap, alu.codCapacitacion);
-  if posCap <> -1 then
+  if alu.estado = no_activo then
   begin
-    LeerCapacitacion(archCap, posCap, cap);
-    if cap.cantAlumnos > 0 then
+    writeln;
+    writeln('  [Aviso] El alumno ya estaba dado de baja. No se realizó ningún cambio.');
+  end
+  else
+  begin
+    alu.estado := no_activo;
+    ActualizarAlumno(archAlu, pos, alu);
+
+    posCap := BuscarCapacitacionPorCodigo(archCap, alu.codCapacitacion);
+    if posCap <> -1 then
     begin
-      cap.cantAlumnos := cap.cantAlumnos - 1;
-      ActualizarCapacitacion(archCap, posCap, cap);
+      LeerCapacitacion(archCap, posCap, cap);
+      if cap.cantAlumnos > 0 then
+      begin
+        cap.cantAlumnos := cap.cantAlumnos - 1;
+        ActualizarCapacitacion(archCap, posCap, cap);
+      end;
     end;
+
+    writeln;
+    writeln('  Alumno dado de baja .');
   end;
 
-  writeln;
-  writeln('Alumno dado de baja lógicamente.');
-  writeln('Presione ENTER para continuar...');
+  writeln('  Presione ENTER para continuar...');
   readln;
 end;
 
 
-{------------------------------------------------------}
-{ 6. Mostrar datos del alumno en pantalla              }
-{------------------------------------------------------}
+
 
 procedure MostrarAlumno(reg: TAlumno);
 const

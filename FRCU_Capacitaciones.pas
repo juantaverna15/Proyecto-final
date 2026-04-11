@@ -1,14 +1,5 @@
 program FRCU_Capacitaciones;
-
-{******************************************************
-  Programa: FRCU_Capacitaciones
-  Sistema:  Gestión de Capacitaciones - FRCU
-  Propósito:
-    - Integrar todos los módulos del sistema de gestión
-      en consola, aplicando programación estructurada.
-  Autor: [Tu Nombre]
-  Fecha: [Fecha de creación]
-*******************************************************}
+{$codepage utf8}
 
 uses
   crt,
@@ -19,11 +10,10 @@ uses
   U_Alumnos,
   U_Listados,
   U_Estadisticas,
-  U_Utils;           { ← lectura segura de enteros }
+  U_Utilidades;          
 
-{------------------------------------------------------}
-{ Declaración de variables globales principales        }
-{------------------------------------------------------}
+
+{variables globales}
 
 var
   archCap  : TArchivoCapacitaciones;
@@ -32,9 +22,9 @@ var
   arbolNom : PNodoNombre;
   opcion   : integer;
 
-{------------------------------------------------------}
-{ Procedimiento: Mostrar menú principal                }
-{------------------------------------------------------}
+
+{ Procedimiento: Mostrar menú principal   }
+
 
 procedure MostrarMenuPrincipal;
 begin
@@ -50,9 +40,9 @@ begin
   writeln('---------------------------------------------');
 end;
 
-{------------------------------------------------------}
+
 { Programa principal                                   }
-{------------------------------------------------------}
+
 
 begin
   clrscr;
@@ -96,7 +86,7 @@ begin
 
   clrscr;
   writeln('=============================================');
-  writeln('     PROGRAMA FINALIZADO CORRECTAMENTE');
+  writeln('     PROGRAMA FINALIZADO                     ');
   writeln('=============================================');
   writeln('Gracias por usar el sistema de gestión FRCU.');
   writeln;

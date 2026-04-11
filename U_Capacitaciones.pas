@@ -1,5 +1,5 @@
 unit U_Capacitaciones;
-
+{$codepage utf8}
 {******************************************************
   Unidad: U_Capacitaciones
   Sistema: Gestión de Capacitaciones FRCU
@@ -17,19 +17,11 @@ unit U_Capacitaciones;
 interface
 
 uses
-  crt, U_Tipos, U_Archivos, U_Arboles, U_Utils;
-
-{------------------------------------------------------}
-{ Procedimientos públicos                              }
-{------------------------------------------------------}
+  crt, U_Tipos, U_Archivos, U_Arboles, U_Utilidades;
 
 procedure MenuCapacitaciones(var arch: TArchivoCapacitaciones;
                              var arbolCod: PNodoCodigo;
                              var arbolNom: PNodoNombre);
-
-{------------------------------------------------------}
-{ Declaración de procedimientos internos               }
-{------------------------------------------------------}
 
 procedure AltaCapacitacion(var arch: TArchivoCapacitaciones;
                            var arbolCod: PNodoCodigo;
@@ -41,7 +33,10 @@ procedure ConsultarCapacitacion(var arch: TArchivoCapacitaciones;
                                 var arbolNom: PNodoNombre;
                                 pos: longint);
 
-procedure ModificarCapacitacion(var arch: TArchivoCapacitaciones; pos: longint);
+procedure ModificarCapacitacion(var arch: TArchivoCapacitaciones;
+                                var arbolCod: PNodoCodigo;
+                                var arbolNom: PNodoNombre;
+                                pos: longint);
 procedure BajaCapacitacion(var arch: TArchivoCapacitaciones; pos: longint);
 procedure MostrarCapacitacion(reg: TCapacitacion);
 
@@ -51,21 +46,12 @@ implementation
 {         BLOQUE DE FUNCIONES DE VALIDACIÓN            }
 {======================================================}
 
-{------------------------------------------------------}
-{ V-1. Verifica si un año es bisiesto                  }
-{   Regla: divisible por 4, excepto centenarios que    }
-{   no sean divisibles por 400.                        }
-{------------------------------------------------------}
 function EsBisiesto(anio: integer): boolean;
 begin
   EsBisiesto := ((anio mod 4 = 0) and (anio mod 100 <> 0))
                 or (anio mod 400 = 0);
 end;
 
-{------------------------------------------------------}
-{ V-2. Devuelve la cantidad de días del mes dado       }
-{   Tiene en cuenta febrero en años bisiestos.         }
-{------------------------------------------------------}
 function DiasEnMes(mes, anio: integer): integer;
 var
   dias: integer;
@@ -78,14 +64,11 @@ begin
        else
          dias := 28;
   else
-    dias := 0;   { Mes fuera de rango -> 0 días fuerza inválido }
+    dias := 0;
   end;
   DiasEnMes := dias;
 end;
 
-{------------------------------------------------------}
-{ V-3. Valida si un registro TFecha es una fecha real  }
-{------------------------------------------------------}
 function FechaValida(f: TFecha): boolean;
 begin
   FechaValida := (f.anio > 0)
@@ -93,9 +76,6 @@ begin
              and (f.dia  >= 1) and (f.dia  <= DiasEnMes(f.mes, f.anio));
 end;
 
-{------------------------------------------------------}
-{ V-4. Compara dos fechas: devuelve TRUE si f1 > f2   }
-{------------------------------------------------------}
 function FechaMayor(f1, f2: TFecha): boolean;
 var
   resultado: boolean;
@@ -109,37 +89,83 @@ begin
   FechaMayor := resultado;
 end;
 
-{------------------------------------------------------}
-{ V-5. Verifica que TODOS los caracteres de s sean     }
-{   dígitos (0..9) y que s no esté vacío.              }
-{   Usado para validar código y horas como texto.      }
-{------------------------------------------------------}
 function EsSoloDigitos(s: string): boolean;
 var
-  i   : integer;
-  ok  : boolean;
+  i              : integer;
+  contienedigitos: boolean;
 begin
-  ok := length(s) > 0;
-  i  := 1;
-  while ok and (i <= length(s)) do
+  contienedigitos := length(s) > 0;
+  i := 1;
+  while contienedigitos and (i <= length(s)) do
   begin
     if not (s[i] in ['0'..'9']) then
-      ok := false;
+      contienedigitos := false;
     i := i + 1;
   end;
-  EsSoloDigitos := ok;
+  EsSoloDigitos := contienedigitos;
 end;
 
 {======================================================}
 {         BLOQUE DE FUNCIONES DE INGRESO VALIDADO      }
 {======================================================}
 
-{------------------------------------------------------}
-{ E-1. Ingresa el CÓDIGO de capacitación               }
-{   - Solo acepta dígitos (rechaza letras y símbolos). }
-{   - Pide de nuevo si el ingreso no es válido.        }
-{   - Retorna 0 si el usuario quiere volver.           }
-{------------------------------------------------------}
+procedure LeerTextoNoVacio(msj: string; var texto: string; maxLen: integer);
+var
+  valido      : boolean;
+  soloEspacios: boolean;
+  caracterOk  : boolean;
+  i           : integer;
+  c           : char;
+begin
+  repeat
+    write(msj);
+    readln(texto);
+
+    valido := length(texto) > 0;
+
+    soloEspacios := true;
+    i := 1;
+    while i <= length(texto) do
+    begin
+      if texto[i] <> ' ' then
+        soloEspacios := false;
+      i := i + 1;
+    end;
+    valido := valido and not soloEspacios;
+
+    caracterOk := true;
+    i := 1;
+    while caracterOk and (i <= length(texto)) do
+    begin
+      c := texto[i];
+      if not ( (c in ['a'..'z']) or
+               (c in ['A'..'Z']) or
+               (c = ' ')         or
+               (c = '-')         or
+               (c = '.')         or
+               (ord(c) >= 128)   ) then
+        caracterOk := false;
+      i := i + 1;
+    end;
+    valido := valido and caracterOk;
+
+    valido := valido and (length(texto) <= maxLen);
+
+    if not valido then
+    begin
+      writeln;
+      if length(texto) = 0 then
+        writeln('  [!] El campo no puede estar vacío.')
+      else if length(texto) > maxLen then
+        writeln('  [!] Máximo ', maxLen, ' caracteres (ingresó ', length(texto), ').')
+      else if soloEspacios then
+        writeln('  [!] El campo no puede contener solo espacios.')
+      else
+        writeln('  [!] Solo se permiten letras, espacios, guion y punto.');
+    end;
+  until valido;
+end;
+
 function LeerCodigoValido: integer;
 var
   s     : string;
@@ -167,12 +193,6 @@ begin
   LeerCodigoValido := valor;
 end;
 
-{------------------------------------------------------}
-{ E-2. Ingresa la FECHA DE INICIO                      }
-{   - Valida que sea una fecha calendario real.         }
-{   - Contempla meses con 28/29/30/31 días.            }
-{   - Incluye validación de año bisiesto (Feb 29).     }
-{------------------------------------------------------}
 procedure LeerFechaInicio(var f: TFecha);
 var
   valido: boolean;
@@ -180,15 +200,14 @@ begin
   repeat
     writeln;
     writeln('  Fecha de inicio:');
-    f.dia  := LeerEnteroRango('    Día  (1-31) : ', 1, 31);
-    f.mes  := LeerEnteroRango('    Mes  (1-12) : ', 1, 12);
-    f.anio := LeerEntero     ('    Año         : ');
+    f.dia  := LeerEnteroRango('    Día  (1-31)       : ', 1, 31);
+    f.mes  := LeerEnteroRango('    Mes  (1-12)       : ', 1, 12);
+    f.anio := LeerEnteroRango('    Año  (2000-2100)  : ', 2000, 2100);
     valido := FechaValida(f);
     if not valido then
     begin
       writeln;
       writeln('  [!] Fecha inválida. Verifique:');
-      writeln('      - El mes debe estar entre 1 y 12.');
       writeln('      - El día debe ser válido para ese mes.');
       if (f.mes = 2) and (f.dia = 29) and not EsBisiesto(f.anio) then
         writeln('      - El año ', f.anio, ' no es bisiesto: febrero tiene solo 28 días.');
@@ -196,11 +215,6 @@ begin
   until valido;
 end;
 
-{------------------------------------------------------}
-{ E-3. Ingresa la FECHA DE FIN                         }
-{   - Valida que sea una fecha real (igual que inicio)  }
-{   - Valida que sea MAYOR que la fecha de inicio.     }
-{------------------------------------------------------}
 procedure LeerFechaFin(var fFin: TFecha; fInicio: TFecha);
 var
   esReal  : boolean;
@@ -210,9 +224,9 @@ begin
   repeat
     writeln;
     writeln('  Fecha de fin:');
-    fFin.dia  := LeerEnteroRango('    Día  (1-31) : ', 1, 31);
-    fFin.mes  := LeerEnteroRango('    Mes  (1-12) : ', 1, 12);
-    fFin.anio := LeerEntero     ('    Año         : ');
+    fFin.dia  := LeerEnteroRango('    Día  (1-31)       : ', 1, 31);
+    fFin.mes  := LeerEnteroRango('    Mes  (1-12)       : ', 1, 12);
+    fFin.anio := LeerEnteroRango('    Año  (2000-2100)  : ', 2000, 2100);
 
     esReal  := FechaValida(fFin);
     esMayor := esReal and FechaMayor(fFin, fInicio);
@@ -235,11 +249,6 @@ begin
   until valido;
 end;
 
-{------------------------------------------------------}
-{ E-4. Ingresa el TIPO de capacitación (1-3)           }
-{   - Acepta solo 1, 2 ó 3.                            }
-{   - Solicita de nuevo mientras el valor sea inválido.}
-{------------------------------------------------------}
 function LeerTipoValido: integer;
 var
   s     : string;
@@ -262,19 +271,11 @@ begin
       valido := (code = 0) and (valor >= 1) and (valor <= 3);
     end;
     if not valido then
-    begin
-      writeln;
       writeln('  [!] Opción inválida. Ingrese 1, 2 ó 3.');
-    end;
   until valido;
   LeerTipoValido := valor;
 end;
 
-{------------------------------------------------------}
-{ E-5. Ingresa la CANTIDAD DE HORAS                    }
-{   - Solo se aceptan caracteres numéricos.            }
-{   - El valor debe ser MAYOR QUE 3 (mínimo 4 horas). }
-{------------------------------------------------------}
 function LeerHorasValidas: integer;
 var
   s     : string;
@@ -283,29 +284,23 @@ var
   valido: boolean;
 begin
   repeat
-    write('  Cantidad de horas (número entero, mayor que 3): ');
+    write('  Cantidad de horas: ');
     readln(s);
     valido := EsSoloDigitos(s);
     if valido then
     begin
       val(s, valor, code);
-      valido := (code = 0) and (valor > 3);
+      valido := (code = 0) and (valor >= 1);
     end;
     if not valido then
     begin
       writeln;
-      writeln('  [!] Inválido. Solo se aceptan números enteros mayores que 3.');
-      writeln('      Letras y símbolos no están permitidos.');
+      writeln('  [!] Entrada inválida. Solo se aceptan números enteros positivos.');
     end;
   until valido;
   LeerHorasValidas := valor;
 end;
 
-{------------------------------------------------------}
-{ E-6. Ingresa la CANTIDAD DE DOCENTES                 }
-{   - Valor mayor que 0 (no nulo) y menor que 10.      }
-{   - Rango aceptado: 1 a 9.                           }
-{------------------------------------------------------}
 function LeerCantDocentesValida: integer;
 var
   s     : string;
@@ -314,27 +309,20 @@ var
   valido: boolean;
 begin
   repeat
-    write('  Cantidad de docentes (entre 1 y 9): ');
+    write('  Cantidad de docentes (Máximo 10): ');
     readln(s);
     valido := EsSoloDigitos(s);
     if valido then
     begin
       val(s, valor, code);
-      valido := (code = 0) and (valor > 0) and (valor < 10);
+      valido := (code = 0) and (valor > 0) and (valor <= 10);
     end;
     if not valido then
-    begin
-      writeln;
-      writeln('  [!] Inválido. La cantidad de docentes debe ser un número entre 1 y 9.');
-    end;
+      writeln('  [!] Inválido. Ingrese un número entre 1 y 10.');
   until valido;
   LeerCantDocentesValida := valor;
 end;
 
-{------------------------------------------------------}
-{ E-7. Ingresa el ÁREA de la capacitación (1-5)        }
-{   - Acepta solo valores entre 1 y 5.                 }
-{------------------------------------------------------}
 function LeerAreaValida: integer;
 var
   s     : string;
@@ -359,22 +347,14 @@ begin
       valido := (code = 0) and (valor >= 1) and (valor <= 5);
     end;
     if not valido then
-    begin
-      writeln;
       writeln('  [!] Opción inválida. Ingrese un número entre 1 y 5.');
-    end;
   until valido;
   LeerAreaValida := valor;
 end;
 
-
 {======================================================}
 {         PROCEDIMIENTOS PRINCIPALES DEL MENÚ          }
 {======================================================}
-
-{------------------------------------------------------}
-{ 1. Menú principal de capacitaciones                  }
-{------------------------------------------------------}
 
 procedure MenuCapacitaciones(var arch: TArchivoCapacitaciones;
                              var arbolCod: PNodoCodigo;
@@ -390,9 +370,8 @@ begin
     writeln('=============================================');
     writeln('      GESTIÓN DE CAPACITACIONES - FRCU       ');
     writeln('=============================================');
-    writeln('  Ingrese 0 como código para volver al menú anterior.');
+    writeln('  Ingrese 0 para volver al menú anterior.');
 
-    { E-1: Lectura del código con validación de caracteres }
     codigo := LeerCodigoValido;
 
     if codigo <> 0 then
@@ -401,12 +380,40 @@ begin
 
       if pos = -1 then
       begin
-        writeln;
-        writeln('  No existe una capacitación con el código ', codigo, '.');
-        write  ('  ¿Desea darla de alta? (1=Sí / 2=No): ');
-        opcion := LeerEnteroRango('', 1, 2);
-        if opcion = 1 then
-          AltaCapacitacion(arch, arbolCod, arbolNom, codigo);
+        { No está en el árbol — buscar en archivo (puede estar dada de baja) }
+        pos := BuscarCapacitacionPorCodigo(arch, codigo);
+
+        if pos <> -1 then
+        begin
+          { Existe pero está dada de baja }
+          LeerCapacitacion(arch, pos, reg);
+          writeln;
+          writeln('  [!] La capacitación con código ', codigo, ' está dada de baja.');
+          writeln('      Nombre: ', reg.nombre);
+          writeln;
+          opcion := LeerEnteroRango('  ¿Desea reactivarla? (1=Sí / 2=No): ', 1, 2);
+          if opcion = 1 then
+          begin
+            reg.estado := activo;
+            ActualizarCapacitacion(arch, pos, reg);
+            InsertarCodigo(arbolCod, reg.codigo, pos);
+            InsertarNombre(arbolNom, reg.nombre, pos);
+            writeln;
+            writeln('  [OK] Capacitación reactivada correctamente.');
+          end;
+          writeln;
+          writeln('  Presione ENTER para continuar...');
+          readln;
+        end
+        else
+        begin
+          { No existe en absoluto — ofrecer alta }
+          writeln;
+          writeln('  No existe una capacitación con el código ', codigo, '.');
+          opcion := LeerEnteroRango('  ¿Desea darla de alta? (1=Sí / 2=No): ', 1, 2);
+          if opcion = 1 then
+            AltaCapacitacion(arch, arbolCod, arbolNom, codigo);
+        end;
       end
       else
       begin
@@ -418,9 +425,8 @@ begin
   until codigo = 0;
 end;
 
-
 {------------------------------------------------------}
-{ 2. Alta de nueva capacitación (con validaciones)     }
+{ 2. Alta de nueva capacitación                        }
 {------------------------------------------------------}
 
 procedure AltaCapacitacion(var arch: TArchivoCapacitaciones;
@@ -428,11 +434,11 @@ procedure AltaCapacitacion(var arch: TArchivoCapacitaciones;
                            var arbolNom: PNodoNombre;
                            codigo: integer);
 var
-  reg       : TCapacitacion;
-  pos       : longint;
-  tipoNum   : integer;
-  areaNum   : integer;
-  cantDoc   : integer;
+  reg     : TCapacitacion;
+  pos     : longint;
+  tipoNum : integer;
+  areaNum : integer;
+  cantDoc : integer;
 begin
   clrscr;
   writeln('=============================================');
@@ -443,17 +449,11 @@ begin
 
   reg.codigo := codigo;
 
-  { --- Nombre --- }
-  write('Nombre de la capacitación: ');
-  readln(reg.nombre);
+  LeerTextoNoVacio('  Nombre de la capacitación : ', reg.nombre, 50);
 
-  { --- E-2: Fecha de inicio (validación de fecha real + año bisiesto) --- }
   LeerFechaInicio(reg.fechaInicio);
-
-  { --- E-3: Fecha de fin (fecha real + mayor que inicio) --- }
   LeerFechaFin(reg.fechaFin, reg.fechaInicio);
 
-  { --- E-4: Tipo (1=Curso, 2=Taller, 3=Seminario) --- }
   tipoNum := LeerTipoValido;
   case tipoNum of
     1: reg.tipo := curso;
@@ -461,21 +461,16 @@ begin
     3: reg.tipo := seminario;
   end;
 
-  { --- E-5: Cantidad de horas (solo números, mayor que 3) --- }
   writeln;
   reg.horas := LeerHorasValidas;
 
-  { --- E-6: Cantidad de docentes (no nulo, menor que 10) --- }
   writeln;
   cantDoc := LeerCantDocentesValida;
-  { Se registra la cantidad y luego se piden los nombres }
-  writeln('  Ingrese el nombre de los ', cantDoc, ' docente(s):');
-  write  ('  Nombres: ');
-  readln(reg.docentes);
+  writeln('  Ingrese los nombres de el/los ', cantDoc, ' docente(s):');
+  LeerTextoNoVacio('  Nombres: ', reg.docentes, 80);
 
   reg.cantAlumnos := 0;
 
-  { --- E-7: Área (1 a 5) --- }
   areaNum := LeerAreaValida;
   case areaNum of
     1: reg.area := ISI;
@@ -487,7 +482,6 @@ begin
 
   reg.estado := activo;
 
-  { --- Grabar en archivo y árboles --- }
   GrabarCapacitacion(arch, reg);
   pos := filesize(arch) - 1;
   InsertarCodigo(arbolCod, reg.codigo, pos);
@@ -497,10 +491,9 @@ begin
   writeln('=============================================');
   writeln('  Capacitación creada correctamente.');
   writeln('=============================================');
-  writeln('Presione ENTER para continuar...');
+  writeln('  Presione ENTER para continuar...');
   readln;
 end;
-
 
 {------------------------------------------------------}
 { 3. Consulta y submenú de una capacitación            }
@@ -528,22 +521,30 @@ begin
     opcion := LeerEnteroRango('Seleccione opción: ', 1, 3);
 
     case opcion of
-      1: ModificarCapacitacion(arch, pos);
+      1: ModificarCapacitacion(arch, arbolCod, arbolNom, pos);
       2: BajaCapacitacion(arch, pos);
     end;
   until opcion = 3;
 end;
 
-
 {------------------------------------------------------}
 { 4. Modificación de una capacitación                  }
 {------------------------------------------------------}
 
-procedure ModificarCapacitacion(var arch: TArchivoCapacitaciones; pos: longint);
+procedure ModificarCapacitacion(var arch: TArchivoCapacitaciones;
+                                var arbolCod: PNodoCodigo;
+                                var arbolNom: PNodoNombre;
+                                pos: longint);
 var
-  reg    : TCapacitacion;
-  opcion : integer;
-  tipoNum: integer;
+  reg         : TCapacitacion;
+  opcion      : integer;
+  tipoNum     : integer;
+  estadoAntes : TEstadoRegistro;
+  estadoNuevo : TEstadoRegistro;
+  s           : string;
+  valor       : integer;
+  code        : integer;
+  valido      : boolean;
 begin
   LeerCapacitacion(arch, pos, reg);
   repeat
@@ -557,20 +558,14 @@ begin
     writeln('  2) Modificar docentes');
     writeln('  3) Modificar fechas');
     writeln('  4) Modificar tipo');
-    writeln('  5) Volver');
-    opcion := LeerEnteroRango('Opción: ', 1, 5);
+    writeln('  5) Cambiar estado (Activo / No activo)');
+    writeln('  6) Volver');
+    opcion := LeerEnteroRango('Opción: ', 1, 6);
 
     case opcion of
-      1: begin
-           write('Nuevo nombre: ');
-           readln(reg.nombre);
-         end;
-      2: begin
-           write('Nuevos docentes: ');
-           readln(reg.docentes);
-         end;
+      1: LeerTextoNoVacio('  Nuevo nombre   : ', reg.nombre, 50);
+      2: LeerTextoNoVacio('  Nuevos docentes: ', reg.docentes, 80);
       3: begin
-           { Reutiliza los validadores de fecha }
            LeerFechaInicio(reg.fechaInicio);
            LeerFechaFin(reg.fechaFin, reg.fechaInicio);
          end;
@@ -582,12 +577,57 @@ begin
              3: reg.tipo := seminario;
            end;
          end;
+      5: begin
+           writeln;
+           estadoAntes := reg.estado;
+           repeat
+             writeln('  Estado de la capacitación:');
+             writeln('    1) Activo');
+             writeln('    2) No activo');
+             write  ('  Seleccione (1 o 2): ');
+             readln(s);
+             valido := EsSoloDigitos(s);
+             if valido then
+             begin
+               val(s, valor, code);
+               valido := (code = 0) and ((valor = 1) or (valor = 2));
+             end;
+             if not valido then
+               writeln('  [!] Opción inválida. Ingrese 1 (Activo) o 2 (No activo).');
+           until valido;
+
+           if valor = 1 then
+             estadoNuevo := activo
+           else
+             estadoNuevo := no_activo;
+
+           if estadoAntes = estadoNuevo then
+           begin
+             writeln;
+             if estadoNuevo = no_activo then
+               writeln('  [Aviso] La capacitación ya estaba dada de baja.')
+             else
+               writeln('  [Aviso] La capacitación ya estaba activa.');
+           end
+           else
+           begin
+             reg.estado := estadoNuevo;
+             { Si se reactiva, volver a insertar en los árboles }
+             if estadoNuevo = activo then
+             begin
+               InsertarCodigo(arbolCod, reg.codigo, pos);
+               InsertarNombre(arbolNom, reg.nombre, pos);
+               writeln('  [OK] Capacitación reactivada correctamente.');
+             end
+             else
+               writeln('  [OK] Capacitación marcada como no activa.');
+           end;
+         end;
     end;
-  until opcion = 5;
+  until opcion = 6;
 
   ActualizarCapacitacion(arch, pos, reg);
 end;
-
 
 {------------------------------------------------------}
 { 5. Baja lógica de una capacitación                   }
@@ -598,14 +638,21 @@ var
   reg: TCapacitacion;
 begin
   LeerCapacitacion(arch, pos, reg);
-  reg.estado := no_activo;
-  ActualizarCapacitacion(arch, pos, reg);
-  writeln;
-  writeln('Capacitación marcada como "no activa".');
-  writeln('Presione ENTER para continuar...');
+  if reg.estado = no_activo then
+  begin
+    writeln;
+    writeln('  [Aviso] La capacitación ya estaba dada de baja. No se realizó ningún cambio.');
+  end
+  else
+  begin
+    reg.estado := no_activo;
+    ActualizarCapacitacion(arch, pos, reg);
+    writeln;
+    writeln('  Capacitación marcada como "no activa".');
+  end;
+  writeln('  Presione ENTER para continuar...');
   readln;
 end;
-
 
 {------------------------------------------------------}
 { 6. Mostrar datos en pantalla                         }
@@ -613,9 +660,9 @@ end;
 
 procedure MostrarCapacitacion(reg: TCapacitacion);
 const
-  TipoTexto  : array[TTipoCapacitacion] of string  = ('Curso', 'Taller', 'Seminario');
-  AreaTexto  : array[TAreaCapacitacion] of string   = ('ISI', 'LOI', 'Civil', 'Electro', 'General');
-  EstadoTexto: array[TEstadoRegistro]   of string   = ('Activo', 'No activo');
+  TipoTexto  : array[TTipoCapacitacion] of string = ('Curso', 'Taller', 'Seminario');
+  AreaTexto  : array[TAreaCapacitacion] of string  = ('ISI', 'LOI', 'Civil', 'Electro', 'General');
+  EstadoTexto: array[TEstadoRegistro]   of string  = ('Activo', 'No activo');
 begin
   writeln('  Código   : ', reg.codigo);
   writeln('  Nombre   : ', reg.nombre);

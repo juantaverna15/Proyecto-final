@@ -1,54 +1,39 @@
 unit U_Estadisticas;
-
-{******************************************************
-  Unidad: U_Estadisticas
-  Sistema: Gestión de Capacitaciones FRCU
-  Propósito:
-    - Calcular y mostrar estadísticas generales
-      del sistema de capacitaciones.
-  Restricciones:
-    - Programación estructurada.
-    - Sin break, exit ni goto.
-*******************************************************}
+{$codepage utf8}
 
 interface
 
 uses
-  crt, U_Tipos, U_Archivos, U_Utils;
+  crt, U_Tipos, U_Archivos, U_Utilidades;
 
-{------------------------------------------------------}
-{ Procedimientos públicos                              }
-{------------------------------------------------------}
+
 
 procedure MenuEstadisticas(var archCap: TArchivoCapacitaciones);
 
 implementation
 
-{------------------------------------------------------}
-{ Declaración de procedimientos internos (con forward) }
-{------------------------------------------------------}
+
+
 
 procedure DistribucionPorTipo(var archCap: TArchivoCapacitaciones); forward;
 procedure PorcentajePorArea(var archCap: TArchivoCapacitaciones); forward;
 procedure PromedioHorasPorTipo(var archCap: TArchivoCapacitaciones); forward;
 
 
-{======================================================}
-{   BLOQUE DE VALIDACIÓN DE FECHAS (uso interno)       }
-{======================================================}
 
-{------------------------------------------------------}
-{ V-1. Año bisiesto                                    }
-{------------------------------------------------------}
+{   BLOQUE DE VALIDACIÓN DE FECHAS        }
+
+{  Año bisiesto                                    }
+
 function EsBisiesto(anio: integer): boolean;
 begin
   EsBisiesto := ((anio mod 4 = 0) and (anio mod 100 <> 0))
                 or (anio mod 400 = 0);
 end;
 
-{------------------------------------------------------}
-{ V-2. Días reales según mes y año                     }
-{------------------------------------------------------}
+
+{  Días reales según mes y año                     }
+
 function DiasEnMes(mes, anio: integer): integer;
 var
   dias: integer;
@@ -66,9 +51,9 @@ begin
   DiasEnMes := dias;
 end;
 
-{------------------------------------------------------}
-{ V-3. Fecha calendario real                           }
-{------------------------------------------------------}
+
+{Fecha calendario real                      }
+
 function FechaValida(f: TFecha): boolean;
 begin
   FechaValida := (f.anio > 0)
@@ -77,10 +62,10 @@ begin
 end;
 
 
-{======================================================}
+
 {   COMPARACIÓN Y RANGO DE FECHAS                      }
 {   (deben ir ANTES de LeerFechaHasta que las usa)     }
-{======================================================}
+
 
 function CompararFechas(f1, f2: TFecha): integer;
 begin
@@ -110,47 +95,30 @@ begin
 end;
 
 
-{======================================================}
-{   BLOQUE DE INGRESO VALIDADO DE FECHAS               }
-{======================================================}
 
-{------------------------------------------------------}
-{ E-1. Ingresa la fecha DESDE                          }
-{   - Debe ser una fecha calendario real.              }
-{   - Contempla año bisiesto.                          }
-{   - Pide de nuevo si la fecha es inválida.           }
-{------------------------------------------------------}
+{   BLOQUE DE INGRESO VALIDADO DE FECHAS               }
+
+
 procedure LeerFechaDesde(var f: TFecha);
 var
   valido: boolean;
 begin
   repeat
     writeln('  Fecha DESDE:');
-    write  ('    Día  (1-31) : '); readln(f.dia);
-    write  ('    Mes  (1-12) : '); readln(f.mes);
-    write  ('    Año         : '); readln(f.anio);
+    f.dia  := LeerEnteroRango('    Día  (1-31) : ', 1, 31);
+    f.mes  := LeerEnteroRango('    Mes  (1-12) : ', 1, 12);
+    f.anio := LeerEnteroRango('    Año  (2000-2100) : ', 2000, 2100);
     valido := FechaValida(f);
     if not valido then
     begin
-      writeln;
-      writeln('  [!] Fecha DESDE inválida. Verifique:');
-      writeln('      - El mes debe estar entre 1 y 12.');
-      writeln('      - El día debe ser válido para ese mes y año.');
+      writeln('  [!] Fecha DESDE inválida. Verifique día, mes y año.');
       if (f.mes = 2) and (f.dia = 29) and not EsBisiesto(f.anio) then
-        writeln('      - El año ', f.anio,
-                ' no es bisiesto: febrero solo tiene 28 días.');
-      writeln;
+        writeln('      El año ', f.anio, ' no es bisiesto.');
     end;
   until valido;
 end;
 
-{------------------------------------------------------}
-{ E-2. Ingresa la fecha HASTA                          }
-{   - Debe ser una fecha calendario real.              }
-{   - Debe ser mayor o igual a la fecha DESDE.         }
-{   - Pide de nuevo si la fecha es inválida o          }
-{     anterior a DESDE.                                }
-{------------------------------------------------------}
+
 procedure LeerFechaHasta(var f: TFecha; desde: TFecha);
 var
   esReal    : boolean;
@@ -159,9 +127,10 @@ var
 begin
   repeat
     writeln('  Fecha HASTA:');
-    write  ('    Día  (1-31) : '); readln(f.dia);
-    write  ('    Mes  (1-12) : '); readln(f.mes);
-    write  ('    Año         : '); readln(f.anio);
+    f.dia  := LeerEnteroRango('    Día  (1-31) : ', 1, 31);
+    f.mes  := LeerEnteroRango('    Mes  (1-12) : ', 1, 12);
+    f.anio := LeerEnteroRango('    Año  (2000-2100) : ', 2000, 2100);
+
 
     esReal := FechaValida(f);
 
@@ -195,13 +164,11 @@ begin
 end;
 
 
-{======================================================}
-{         PROCEDIMIENTOS PRINCIPALES                   }
-{======================================================}
 
-{------------------------------------------------------}
+
+
 { 1. Menú de estadísticas                              }
-{------------------------------------------------------}
+
 
 procedure MenuEstadisticas(var archCap: TArchivoCapacitaciones);
 var
@@ -228,12 +195,6 @@ begin
 end;
 
 
-{------------------------------------------------------}
-{ 3. Distribución por tipo entre dos fechas            }
-{   VALIDACIONES:                                      }
-{   - Fecha DESDE: debe ser una fecha real (bisiesto)  }
-{   - Fecha HASTA: fecha real + >= que fecha DESDE     }
-{------------------------------------------------------}
 
 procedure DistribucionPorTipo(var archCap: TArchivoCapacitaciones);
 var
@@ -248,12 +209,12 @@ begin
   writeln('=============================================');
   writeln;
 
-  { E-1: Fecha DESDE — fecha real con año bisiesto }
+  
   LeerFechaDesde(desde);
 
   writeln;
 
-  { E-2: Fecha HASTA — fecha real + mayor o igual a DESDE }
+  
   LeerFechaHasta(hasta, desde);
 
   writeln;
@@ -294,9 +255,7 @@ begin
 end;
 
 
-{------------------------------------------------------}
-{ 4. Porcentaje de capacitaciones por área             }
-{------------------------------------------------------}
+
 
 procedure PorcentajePorArea(var archCap: TArchivoCapacitaciones);
 var
@@ -347,9 +306,7 @@ begin
 end;
 
 
-{------------------------------------------------------}
-{ 5. Promedio de horas por tipo de capacitación        }
-{------------------------------------------------------}
+
 
 procedure PromedioHorasPorTipo(var archCap: TArchivoCapacitaciones);
 var
