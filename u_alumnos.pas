@@ -362,6 +362,8 @@ var
   dni           : longint;
   posCap, posAlu: longint;
   opcion        : integer;
+  aluTemp       : TAlumno;
+  capTemp       : TCapacitacion;
 begin
   repeat
     clrscr;
@@ -399,10 +401,34 @@ begin
             AltaAlumno(archAlu, archCap, codCap);
         end
         else
-          ConsultarAlumno(archAlu, archCap, posAlu);
+        begin
+          LeerAlumno(archAlu, posAlu, aluTemp);
+          if aluTemp.estado = no_activo then
+          begin
+            writeln;
+            writeln('  [!] El alumno figura como NO ACTIVO en esta capacitación.');
+            opcion := LeerEnteroRango('  ¿Desea reactivarlo? (1=Sí / 2=No): ', 1, 2);
+            if opcion = 1 then
+            begin
+              aluTemp.estado := activo;
+              ActualizarAlumno(archAlu, posAlu, aluTemp);
+              posCap := BuscarCapacitacionPorCodigo(archCap, codCap);
+              if posCap <> -1 then
+              begin
+                LeerCapacitacion(archCap, posCap, capTemp);
+                capTemp.cantAlumnos := capTemp.cantAlumnos + 1;
+                ActualizarCapacitacion(archCap, posCap, capTemp);
+              end;
+              writeln;
+              writeln('  [OK] Alumno reactivado correctamente.');
+            end;
+          end
+          else
+            ConsultarAlumno(archAlu, archCap, posAlu);
+        end;
       end;
       writeln;
-      writeln('Presione ENTER para continuar...');
+      writeln('  Presione ENTER para continuar...');
       readln;
     end;
 
