@@ -1,25 +1,14 @@
 unit U_Archivos;
 {$codepage utf8}
-{******************************************************
-  Unidad: U_Archivos
-  Sistema: Gestión de Capacitaciones FRCU
-  Propósito:
-    - Manejar archivos random de capacitaciones y alumnos.
-    - Proveer operaciones básicas de acceso, lectura,
-      escritura, búsqueda y actualización.
-  Estructura:
-    * Sin uso de break, exit ni goto.
-    * Procedimientos modulares.
-*******************************************************}
+
 
 interface
 
 uses
   crt, U_Tipos, U_Arboles;
 
-{-------------------------------------------------------}
-{ Procedimientos públicos                                }
-{-------------------------------------------------------}
+
+
 
 procedure AbrirArchivoCapacitaciones(var arch: TArchivoCapacitaciones);
 procedure AbrirArchivoAlumnos(var arch: TArchivoAlumnos);
@@ -44,9 +33,9 @@ procedure CargarArbolesDesdeArchivo(var arch: TArchivoCapacitaciones;
 
 implementation
 
-{-------------------------------------------------------}
-{ 1. Apertura y cierre de archivos random               }
-{-------------------------------------------------------}
+
+{ Apertura y cierre de archivos random   }
+
 
 procedure AbrirArchivoCapacitaciones(var arch: TArchivoCapacitaciones);
 begin
@@ -88,9 +77,9 @@ begin
   close(arch);
 end;
 
-{-------------------------------------------------------}
-{ 2. Operaciones básicas de lectura/escritura           }
-{-------------------------------------------------------}
+
+{lectura/escritura}
+
 
 procedure LeerCapacitacion(var arch: TArchivoCapacitaciones; pos: longint; var reg: TCapacitacion);
 begin
@@ -128,9 +117,9 @@ begin
   write(arch, reg);
 end;
 
-{-------------------------------------------------------}
-{ 3. Búsquedas secuenciales                             }
-{-------------------------------------------------------}
+
+{Búsquedas secuenciales}
+
 
 function BuscarCapacitacionPorCodigo(var arch: TArchivoCapacitaciones; codigo: integer): longint;
 var
@@ -168,9 +157,9 @@ begin
   BuscarAlumnoPorDNI := encontrado;
 end;
 
-{-------------------------------------------------------}
-{ 4. Cargar árboles desde archivo                       }
-{-------------------------------------------------------}
+
+{Cargar árboles desde archivo }
+
 
 procedure CargarArbolesDesdeArchivo(var arch: TArchivoCapacitaciones;
                                     var arbolCod: PNodoCodigo;

@@ -1,17 +1,6 @@
 unit U_Alumnos;
 {$codepage utf8}
-{******************************************************
-  Unidad: U_Alumnos
-  Sistema: Gestión de Capacitaciones FRCU
-  Propósito:
-    - Gestionar operaciones ABMC de alumnos asociados
-      a capacitaciones, manteniendo consistencia
-      con el archivo maestro de capacitaciones.
-  Restricciones:
-    - Programación estructurada (sin break, exit, goto)
-    - Todas las entradas de usuario son validadas antes
-      de ser aceptadas.
-*******************************************************}
+
 
 interface
 
@@ -50,34 +39,14 @@ procedure BajaAlumno(var archAlu: TArchivoAlumnos;
 procedure MostrarAlumno(reg: TAlumno); forward;
 
 
-{======================================================}
-{         BLOQUE DE FUNCIONES DE VALIDACIÓN            }
-{======================================================}
 
-{------------------------------------------------------}
-{ V-1. Verifica que un string contenga solo dígitos    }
-{   y no esté vacío.                                   }
-{------------------------------------------------------}
-function EsSoloDigitos(s: string): boolean;
-var
-  i  : integer;
-  contienedigitos : boolean;
-begin
-  contienedigitos := length(s) > 0;
-  i  := 1;
-  while contienedigitos and (i <= length(s)) do
-  begin
-    if not (s[i] in ['0'..'9']) then
-      contienedigitos := false;
-    i := i + 1;
-  end;
-  EsSoloDigitos := contienedigitos;
-end;
+{FUNCIONES DE VALIDACIÓN}
 
-{------------------------------------------------------}
-{ V-2. Verifica que el string NO contenga dígitos      }
-{   y no esté vacío. Usado para validar nombres.       }
-{------------------------------------------------------}
+
+
+{Verifica que el string no tenga dígitos      
+ y no esté vacío. se usa para validar nombres. }
+
 function EsNombreValido(s: string): boolean;
 var
   i      : integer;
@@ -89,9 +58,6 @@ begin
   while valido and (i <= length(s)) do
   begin
     c := s[i];
-    { Permite: letras a-z / A-Z, espacio, guion medio,     }
-    { punto (Dr. / Jr.) y bytes >= #128 que cubren los      }
-    { caracteres UTF-8 de dos bytes: á é í ó ú ü ñ Ñ etc.  }
     if not ( (c in ['a'..'z']) or
              (c in ['A'..'Z']) or
              (c = ' ')         or
@@ -104,56 +70,8 @@ begin
   EsNombreValido := valido;
 end;
 
-{------------------------------------------------------}
-{ V-3. Año bisiesto                                    }
-{------------------------------------------------------}
-function EsBisiesto(anio: integer): boolean;
-begin
-  EsBisiesto := ((anio mod 4 = 0) and (anio mod 100 <> 0))
-                or (anio mod 400 = 0);
-end;
 
-{------------------------------------------------------}
-{ V-4. Días reales en un mes dado                      }
-{------------------------------------------------------}
-function DiasEnMes(mes, anio: integer): integer;
-var
-  dias: integer;
-begin
-  case mes of
-    1, 3, 5, 7, 8, 10, 12 : dias := 31;
-    4, 6, 9, 11            : dias := 30;
-    2: if EsBisiesto(anio) then
-         dias := 29
-       else
-         dias := 28;
-  else
-    dias := 0;
-  end;
-  DiasEnMes := dias;
-end;
-
-{------------------------------------------------------}
-{ V-5. Valida que un TFecha sea una fecha calendario   }
-{   real (incluye año bisiesto para febrero).          }
-{------------------------------------------------------}
-function FechaValida(f: TFecha): boolean;
-begin
-  FechaValida := (f.anio > 0)
-             and (f.mes  >= 1) and (f.mes  <= 12)
-             and (f.dia  >= 1) and (f.dia  <= DiasEnMes(f.mes, f.anio));
-end;
-
-
-{======================================================}
-{         BLOQUE DE FUNCIONES DE INGRESO VALIDADO      }
-{======================================================}
-
-{------------------------------------------------------}
-{ E-1. Ingresa el CÓDIGO de capacitación               }
-{   - Solo dígitos, rechaza letras y símbolos.         }
-{   - Retorna 0 si el usuario quiere volver.           }
-{------------------------------------------------------}
+{Valida si el codigo de capacitacion son numeros}
 function LeerCodigoCap: integer;
 var
   s     : string;
@@ -173,7 +91,7 @@ begin
     if not valido then
     begin
       writeln;
-      writeln('  [!] Solo se permiten dígitos numéricos. Sin letras ni símbolos.');
+      writeln('  [!] Solo se permiten NUMEROS. Sin letras ni símbolos.');
     end;
   until valido;
   LeerCodigoCap := valor;
@@ -181,12 +99,7 @@ end;
 
 
 
-{------------------------------------------------------}
-{ E-2. Ingresa el DNI del alumno                       }
-{   - Solo dígitos (sin puntos ni guiones).            }
-{   - Valor mínimo: 10.000.000                         }
-{   - Valor máximo: 99.999.999                         }
-{------------------------------------------------------}
+{VALIDAR DNI SIN PUNTOS NI DIGITOS NI SIMBOLOS}
 function LeerDNIValido: longint;
 var
   s     : string;
@@ -213,11 +126,7 @@ begin
   LeerDNIValido := valor;
 end;
 
-{------------------------------------------------------}
-{ E-3. Ingresa el APELLIDO Y NOMBRE del alumno         }
-{   - No puede estar vacío.                            }
-{   - No puede contener dígitos (0-9).                 }
-{------------------------------------------------------}
+{ESTO VALIDA EL NOMBRE QUE NO TENGA DIGITOS Y NO ESTE VACIO}
 procedure LeerNombreValido(var nombre: string);
 var
   valido: boolean;
@@ -237,7 +146,7 @@ begin
   until valido;
 end;
 
-
+{LEE LA FECHA Y LLAMA LAS FUNCIONES DE VALIDACION HASTA QUE SE INGRESE BIEN}
 procedure LeerFechaNacimiento(var f: TFecha);
 var
   valido: boolean;
@@ -246,7 +155,7 @@ begin
     writeln('  Fecha de nacimiento:');
     f.dia  := LeerEnteroRango('    Día  (1-31) : ', 1, 31);
     f.mes  := LeerEnteroRango('    Mes  (1-12) : ', 1, 12);
-    f.anio := LeerEnteroRango('    Año  (1900-2010) : ', 1900, 2010);
+    f.anio := LeerEnteroRango('    Año  (1940-2010) : ', 1900, 2010);
     valido := FechaValida(f);
     if not valido then
     begin
@@ -260,7 +169,7 @@ begin
     end;
   until valido;
 end;
-
+{VALIDA LA ENTRADA DE DOCENTES, NO TERMINA HASTA QUE SE INGRESE CORRECTAMENTE}
 function LeerEsDocenteUTN: boolean;
 var
   s     : string;
@@ -370,10 +279,10 @@ begin
     writeln('=============================================');
     writeln('             GESTIÓN DE ALUMNOS              ');
     writeln('=============================================');
-    writeln('  Ingrese 0 como código para volver al menú anterior.');
+    writeln('  Ingrese 0 para volver al menú anterior.');
     writeln;
 
-    { E-1: Código de capacitación, solo dígitos }
+    {Código de capacitación, solo dígitos }
     codCap := LeerCodigoCap;
 
     if codCap <> 0 then
@@ -388,7 +297,6 @@ begin
       else
       begin
         writeln;
-        { E-2: DNI, solo números, máx 99.999.999 }
         dni    := LeerDNIValido;
         posAlu := BuscarAlumnoPorDNI(archAlu, codCap, dni);
 
@@ -420,7 +328,7 @@ begin
                 ActualizarCapacitacion(archCap, posCap, capTemp);
               end;
               writeln;
-              writeln('  [OK] Alumno reactivado correctamente.');
+              writeln('  [!] Alumno dado de alta .');
             end;
           end
           else
@@ -436,9 +344,7 @@ begin
 end;
 
 
-{------------------------------------------------------}
-{ 2. Alta de nuevo alumno (con validaciones completas) }
-{------------------------------------------------------}
+{ nuevo alumno }
 
 procedure AltaAlumno(var archAlu: TArchivoAlumnos;
                      var archCap: TArchivoCapacitaciones;
@@ -457,22 +363,22 @@ begin
 
   alu.codCapacitacion := codCap;
 
-  { E-2: DNI validado (solo números, max 99.999.999) }
+  {  DNI validado }
   alu.dni := LeerDNIValido;
 
-  { E-3: Nombre sin dígitos y no vacío }
+  { Nombre sin dígitos y no vacío }
   writeln;
   LeerNombreValido(alu.apenom);
 
-  { E-4: Fecha de nacimiento real con año bisiesto }
+  { Fecha de nacimiento real con año bisiesto }
   writeln;
   LeerFechaNacimiento(alu.fechaNac);
 
-  { E-5: Docente UTN, solo 1 o 2 }
+  { Docente UTN}
   writeln;
   alu.esDocenteUTN := LeerEsDocenteUTN;
 
-  { E-6: Condición, solo 1 o 2 }
+  { Condición}
   writeln;
   alu.condicion := LeerCondicionValida;
 
@@ -492,7 +398,7 @@ begin
 
   writeln;
   writeln('=============================================');
-  writeln('  Alumno inscripto correctamente.');
+  writeln('  Alumno inscripto .');
   writeln('=============================================');
   writeln('Presione ENTER para continuar...');
   readln;

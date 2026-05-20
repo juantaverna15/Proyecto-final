@@ -4,7 +4,7 @@ unit U_Tipos;
 
 interface
 
-{------------------------------}
+
 { 1. Tipos de Enumeraciones   }
 
 
@@ -61,7 +61,7 @@ type
     dni: longint;                { Documento nacional de identidad }
     apenom: string[50];          { Apellido y nombre del alumno }
     fechaNac: TFecha;            { Fecha de nacimiento }
-    esDocenteUTN: boolean;       { Indica si es docente UTN }
+    esDocenteUTN: boolean;       { Indica si es docente de la UTN }
     condicion: TCondicionAlumno; { Aprobado / Asistencia }
     estado: TEstadoRegistro;     { Activo / No activo }
   end;

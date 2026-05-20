@@ -1,18 +1,6 @@
 unit U_Capacitaciones;
 {$codepage utf8}
-{******************************************************
-  Unidad: U_Capacitaciones
-  Sistema: Gestión de Capacitaciones FRCU
-  Propósito:
-    - Gestionar las operaciones ABMC del archivo de
-      capacitaciones, interactuando con los árboles
-      e interfaces de archivos.
-  Restricciones:
-    - Programación estructurada.
-    - Sin break, exit ni goto.
-    - Todas las entradas de usuario son validadas antes
-      de ser aceptadas.
-*******************************************************}
+
 
 interface
 
@@ -42,39 +30,6 @@ procedure MostrarCapacitacion(reg: TCapacitacion);
 
 implementation
 
-{======================================================}
-{         BLOQUE DE FUNCIONES DE VALIDACIÓN            }
-{======================================================}
-
-function EsBisiesto(anio: integer): boolean;
-begin
-  EsBisiesto := ((anio mod 4 = 0) and (anio mod 100 <> 0))
-                or (anio mod 400 = 0);
-end;
-
-function DiasEnMes(mes, anio: integer): integer;
-var
-  dias: integer;
-begin
-  case mes of
-    1, 3, 5, 7, 8, 10, 12 : dias := 31;
-    4, 6, 9, 11            : dias := 30;
-    2: if EsBisiesto(anio) then
-         dias := 29
-       else
-         dias := 28;
-  else
-    dias := 0;
-  end;
-  DiasEnMes := dias;
-end;
-
-function FechaValida(f: TFecha): boolean;
-begin
-  FechaValida := (f.anio > 0)
-             and (f.mes  >= 1) and (f.mes  <= 12)
-             and (f.dia  >= 1) and (f.dia  <= DiasEnMes(f.mes, f.anio));
-end;
 
 function FechaMayor(f1, f2: TFecha): boolean;
 var
@@ -89,25 +44,8 @@ begin
   FechaMayor := resultado;
 end;
 
-function EsSoloDigitos(s: string): boolean;
-var
-  i              : integer;
-  contienedigitos: boolean;
-begin
-  contienedigitos := length(s) > 0;
-  i := 1;
-  while contienedigitos and (i <= length(s)) do
-  begin
-    if not (s[i] in ['0'..'9']) then
-      contienedigitos := false;
-    i := i + 1;
-  end;
-  EsSoloDigitos := contienedigitos;
-end;
 
-{======================================================}
-{         BLOQUE DE FUNCIONES DE INGRESO VALIDADO      }
-{======================================================}
+
 
 procedure LeerTextoNoVacio(msj: string; var texto: string; maxLen: integer);
 var
@@ -399,7 +337,7 @@ begin
             InsertarCodigo(arbolCod, reg.codigo, pos);
             InsertarNombre(arbolNom, reg.nombre, pos);
             writeln;
-            writeln('  [OK] Capacitación reactivada correctamente.');
+            writeln('  Capacitación reactivada .');
           end;
           writeln;
           writeln('  Presione ENTER para continuar...');
@@ -407,7 +345,7 @@ begin
         end
         else
         begin
-          { No existe en absoluto — ofrecer alta }
+          { No existe — ofrecer alta }
           writeln;
           writeln('  No existe una capacitación con el código ', codigo, '.');
           opcion := LeerEnteroRango('  ¿Desea darla de alta? (1=Sí / 2=No): ', 1, 2);
@@ -425,9 +363,8 @@ begin
   until codigo = 0;
 end;
 
-{------------------------------------------------------}
-{ 2. Alta de nueva capacitación                        }
-{------------------------------------------------------}
+{ Alta de nueva capacitación }
+
 
 procedure AltaCapacitacion(var arch: TArchivoCapacitaciones;
                            var arbolCod: PNodoCodigo;

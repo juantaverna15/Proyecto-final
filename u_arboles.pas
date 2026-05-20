@@ -26,7 +26,7 @@ procedure LiberarArbolNombre(var raiz: PNodoNombre);
 implementation
 
 
-{ 1. Inicialización de árboles vacíos              }
+{  Inicialización de árboles vacíos              }
 
 
 procedure InicializarArbolCodigo(var raiz: PNodoCodigo);
@@ -40,7 +40,7 @@ begin
 end;
 
 
-{ 2. Inserción ordenada (ABB clásico)              }
+{ Inserción ordenada }
 
 
 procedure InsertarCodigo(var raiz: PNodoCodigo; codigo: integer; pos: longint);
@@ -84,9 +84,9 @@ begin
 end;
 
 
-{ 3. Búsqueda en ABB                               }
-{ Devuelve: posición relativa del archivo          }
-{ o -1 si no se encuentra                          }
+{ Búsqueda en ABB }
+
+{ -1 si no se encuentra }
 
 
 function BuscarPorCodigo(raiz: PNodoCodigo; codigo: integer): longint;
@@ -126,7 +126,7 @@ begin
 end;
 
 
-{ 4. Recorridos (InOrden para listados ordenados)  }
+{ Recorridos (InOrden para listado ordenado)  }
 
 
 procedure InOrdenCodigo(raiz: PNodoCodigo);
@@ -149,7 +149,7 @@ begin
   end;
 end;
 
-{ 5. Liberar memoria de árboles                    }
+{ Liberar memoria de  }
 
 
 procedure LiberarArbolCodigo(var raiz: PNodoCodigo);

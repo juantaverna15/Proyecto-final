@@ -47,7 +47,7 @@ end;
 begin
   clrscr;
   writeln('=============================================');
-  writeln(' INICIALIZANDO SISTEMA DE CAPACITACIONES FRCU ');
+  writeln(' INICIANDO SISTEMA DE CAPACITACIONES FRCU    ');
   writeln('=============================================');
   writeln;
 
@@ -59,7 +59,7 @@ begin
   CargarArbolesDesdeArchivo(archCap, arbolCod, arbolNom);
 
   writeln;
-  writeln('Datos cargados correctamente.');
+  writeln('Datos cargados .');
   writeln('Presione ENTER para continuar...');
   readln;
 
@@ -88,6 +88,5 @@ begin
   writeln('=============================================');
   writeln('     PROGRAMA FINALIZADO                     ');
   writeln('=============================================');
-  writeln('Gracias por usar el sistema de gestión FRCU.');
   writeln;
 end.

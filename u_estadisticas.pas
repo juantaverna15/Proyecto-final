@@ -21,50 +21,8 @@ procedure PromedioHorasPorTipo(var archCap: TArchivoCapacitaciones); forward;
 
 
 
-{   BLOQUE DE VALIDACIÓN DE FECHAS        }
-
-{  Año bisiesto                                    }
-
-function EsBisiesto(anio: integer): boolean;
-begin
-  EsBisiesto := ((anio mod 4 = 0) and (anio mod 100 <> 0))
-                or (anio mod 400 = 0);
-end;
-
-
-{  Días reales según mes y año                     }
-
-function DiasEnMes(mes, anio: integer): integer;
-var
-  dias: integer;
-begin
-  case mes of
-    1, 3, 5, 7, 8, 10, 12 : dias := 31;
-    4, 6, 9, 11            : dias := 30;
-    2: if EsBisiesto(anio) then
-         dias := 29
-       else
-         dias := 28;
-  else
-    dias := 0;
-  end;
-  DiasEnMes := dias;
-end;
-
-
-{Fecha calendario real                      }
-
-function FechaValida(f: TFecha): boolean;
-begin
-  FechaValida := (f.anio > 0)
-             and (f.mes  >= 1) and (f.mes  <= 12)
-             and (f.dia  >= 1) and (f.dia  <= DiasEnMes(f.mes, f.anio));
-end;
-
-
-
 {   COMPARACIÓN Y RANGO DE FECHAS                      }
-{   (deben ir ANTES de LeerFechaHasta que las usa)     }
+
 
 
 function CompararFechas(f1, f2: TFecha): integer;
