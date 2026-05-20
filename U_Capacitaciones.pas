@@ -290,9 +290,7 @@ begin
   LeerAreaValida := valor;
 end;
 
-{======================================================}
-{         PROCEDIMIENTOS PRINCIPALES DEL MENÚ          }
-{======================================================}
+
 
 procedure MenuCapacitaciones(var arch: TArchivoCapacitaciones;
                              var arbolCod: PNodoCodigo;
@@ -432,9 +430,7 @@ begin
   readln;
 end;
 
-{------------------------------------------------------}
-{ 3. Consulta y submenú de una capacitación            }
-{------------------------------------------------------}
+
 
 procedure ConsultarCapacitacion(var arch: TArchivoCapacitaciones;
                                 var arbolCod: PNodoCodigo;
@@ -464,9 +460,6 @@ begin
   until opcion = 3;
 end;
 
-{------------------------------------------------------}
-{ 4. Modificación de una capacitación                  }
-{------------------------------------------------------}
 
 procedure ModificarCapacitacion(var arch: TArchivoCapacitaciones;
                                 var arbolCod: PNodoCodigo;
@@ -566,9 +559,7 @@ begin
   ActualizarCapacitacion(arch, pos, reg);
 end;
 
-{------------------------------------------------------}
-{ 5. Baja lógica de una capacitación                   }
-{------------------------------------------------------}
+
 
 procedure BajaCapacitacion(var arch: TArchivoCapacitaciones; pos: longint);
 var
@@ -591,9 +582,7 @@ begin
   readln;
 end;
 
-{------------------------------------------------------}
-{ 6. Mostrar datos en pantalla                         }
-{------------------------------------------------------}
+
 
 procedure MostrarCapacitacion(reg: TCapacitacion);
 const

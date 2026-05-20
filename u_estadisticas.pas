@@ -54,7 +54,7 @@ end;
 
 
 
-{   BLOQUE DE INGRESO VALIDADO DE FECHAS               }
+{BLOQUE DE INGRESO VALIDADO DE FECHAS  }
 
 
 procedure LeerFechaDesde(var f: TFecha);
@@ -125,7 +125,6 @@ end;
 
 
 
-{ 1. Menú de estadísticas                              }
 
 
 procedure MenuEstadisticas(var archCap: TArchivoCapacitaciones);
